@@ -38,7 +38,7 @@ def should_discuss(changeset: dict) -> bool:
 
         # noinspection SpellCheckingInspection
         if any(word in discussion['text'] for word in ('addr', 'adres')):
-            print(f'🗨️ Skipped {changeset_id}: Already discussed')
+            print(f'💬 Skipped {changeset_id}: Already discussed')
             return False
 
     return True
@@ -82,6 +82,9 @@ def compose_message(user: dict, issues: dict[Check, list[OverpassEntry]]) -> str
 
 
 def main():
+    if DRY_RUN:
+        print('🏜️ This is a dry run')
+
     print('🔒️ Logging in to OpenStreetMap')
     osm = OsmApi()
     user = osm.get_authorized_user()
