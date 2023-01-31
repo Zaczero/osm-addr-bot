@@ -30,7 +30,7 @@ def should_discuss(changeset: dict) -> bool:
 
     created_by = changeset['tags'].get('created_by', '')
 
-    if any(black in created_by for black in APP_BLACKLIST):
+    if any(black.lower() in created_by.lower() for black in APP_BLACKLIST):
         print(f'📵 Skipped {changeset_id}: {created_by}')
         return False
 

@@ -9,7 +9,11 @@ USER_AGENT = f'osm-addr-bot (+https://github.com/Zaczero/osm-addr-bot)'
 
 APP_BLACKLIST = (
     'StreetComplete',
-    'Every Door'
+    'Every Door',
+    'OsmAnd',
+    'Organic Maps',
+    'Android',
+    'iOS'
 )
 
 SEARCH_RELATION = 49715
