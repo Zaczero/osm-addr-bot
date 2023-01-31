@@ -7,6 +7,11 @@ DRY_RUN = os.getenv('DRY_RUN', None) == '1'
 
 USER_AGENT = f'osm-addr-bot (+https://github.com/Zaczero/osm-addr-bot)'
 
+APP_BLACKLIST = (
+    'StreetComplete',
+    'Every Door'
+)
+
 SEARCH_RELATION = 49715
 SEARCH_BBOX = {
     'min_lat': 49.0273953,

@@ -4,7 +4,7 @@ from datetime import datetime
 from tqdm import tqdm
 
 from checks import Check, ALL_CHECKS
-from config import NEW_USER_THRESHOLD, PRO_USER_THRESHOLD, DRY_RUN
+from config import NEW_USER_THRESHOLD, PRO_USER_THRESHOLD, DRY_RUN, APP_BLACKLIST
 from osmapi import OsmApi
 from overpass import Overpass
 from overpass_entry import OverpassEntry
@@ -28,8 +28,10 @@ def should_discuss(changeset: dict) -> bool:
         print(f'🤖 Skipped {changeset_id}: Possible import')
         return False
 
-    if changeset['tags'].get('created_by', None).startswith('StreetComplete'):
-        print(f'🌆 Skipped {changeset_id}: StreetComplete')
+    created_by = changeset['tags'].get('created_by', '')
+
+    if any(black in created_by for black in APP_BLACKLIST):
+        print(f'📵 Skipped {changeset_id}: {created_by}')
         return False
 
     for discussion in changeset.get('discussion', []):
