@@ -4,7 +4,7 @@
 [![GitHub](https://img.shields.io/github/license/Zaczero/osm-addr-bot)](https://github.com/Zaczero/osm-addr-bot/blob/main/LICENSE)
 [![GitHub Repo stars](https://img.shields.io/github/stars/Zaczero/osm-addr-bot?style=social)](https://github.com/Zaczero/osm-addr-bot)
 
-An open-source and easily configurable OpenStreetMap address verification bot.
+🗺️ Easily configurable OpenStreetMap address verification bot
 
 ### Execution output
 
