@@ -1,22 +1,8 @@
-from datetime import datetime
-
-import xmltodict
-
 from checks import Check
 from config import SEARCH_BBOX, SEARCH_RELATION
 from overpass_entry import OverpassEntry
 from state import State
-from utils import get_http_client
-
-
-def parse_timestamp(ts: str) -> int:
-    date_format = '%Y-%m-%dT%H:%M:%SZ'
-    return int(datetime.strptime(ts, date_format).timestamp())
-
-
-def format_timestamp(ts: int) -> str:
-    date_format = '%Y-%m-%dT%H:%M:%SZ'
-    return datetime.utcfromtimestamp(ts).strftime(date_format)
+from utils import get_http_client, format_timestamp, parse_timestamp
 
 
 def get_bbox() -> str:
@@ -31,7 +17,7 @@ def build_query(start_ts: int, end_ts: int, check: Check, timeout: int) -> str:
     start = format_timestamp(start_ts)
     end = format_timestamp(end_ts)
 
-    return f'[out:csv(::changeset,::type,::id;false)][timeout:{timeout}]{get_bbox()};' \
+    return f'[out:csv(::timestamp,::changeset,::type,::id;false)][timeout:{timeout}]{get_bbox()};' \
            f'relation(id:{SEARCH_RELATION});map_to_area;' \
            f'(' \
            f'nwr{check.overpass}(changed:"{start}","{end}")(area._);' \
@@ -62,4 +48,11 @@ class Overpass:
         r = self.c.post(self.base_url, data={'data': query}, timeout=timeout)
         r.raise_for_status()
 
-        return [OverpassEntry(*(row.split('\t')), reason=check) for row in r.text.split('\n') if row]
+        result = [
+            r
+            for r
+            in (OverpassEntry(*(row.split('\t')), reason=check) for row in r.text.split('\n') if row)
+            if self.state.start_ts <= r.timestamp <= self.state.end_ts
+        ]
+
+        return result

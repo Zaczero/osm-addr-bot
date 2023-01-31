@@ -12,12 +12,13 @@ class Check:
 ALL_CHECKS = [
 
     # BAD_CITY_WITH_PLACE
-    Check(
-        message="Wartość addr:city jest niezgodna z addr:place.",
-        message_fix="Jeśli adres ma nazwę ulicy, usuń addr:place i zastosuj kombinację addr:city + addr:street. "
-                    "W przeciwnym razie, pozostaw tylko addr:place.",
-        overpass="['addr:city']['addr:place'](if: t['addr:city'] != t['addr:place'])",
-    ),
+    # Check(
+    #     message="Wartość addr:city jest niezgodna z addr:place.",
+    #     message_fix="Jeśli adres ma nazwę ulicy, usuń addr:place i zastosuj kombinację addr:city + addr:street. "
+    #                 "W przeciwnym razie, pozostaw tylko addr:place.",
+    #     overpass="['addr:city']['addr:place'](if: t['addr:city'] != t['addr:place'])",
+    # ),
+    # TODO: validate is_in: https://www.openstreetmap.org/way/54562549
 
     # NUMBER_WITHOUT_CITY
     Check(
