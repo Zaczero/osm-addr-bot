@@ -56,8 +56,12 @@ def compose_message(user: dict, issues: dict[Check, list[OverpassEntry]]) -> str
     if new_user:
         message += '🗺️ Witaj na OpenStreetMap!\n\n'
 
-    message += 'Zauważyłem, że twoja zmiana zawiera niepoprawne adresy. ' \
-               'Przygotowałem listę obiektów do poprawy oraz dodatkowe informacje:\n\n'
+    if pro_user:
+        message += 'Zauważyłem, że Twoja zmiana zawiera niepoprawne adresy. ' \
+                   'Przygotowałem listę obiektów oraz dodatkowe informacje:\n\n'
+    else:
+        message += 'Zauważyłem, że Twoja zmiana zawiera niepoprawne adresy. ' \
+                   'Przygotowałem listę obiektów do poprawy oraz dodatkowe informacje:\n\n'
 
     for check, entries in issues.items():
         if pro_user:

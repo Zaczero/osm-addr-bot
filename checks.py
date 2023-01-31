@@ -22,7 +22,7 @@ ALL_CHECKS = [
 
     # NUMBER_WITHOUT_CITY
     Check(
-        message="Niekompletne dane adresowe, brakuje nazwy miasta.",
+        message="Adres jest niekompletny, brakuje informacji o miejscowości.",
         message_fix="Jeśli adres ma nazwę ulicy, zastosuj kombinację addr:city + addr:street. "
                     "W przeciwnym razie, przekaż nazwę w addr:place.",
         overpass="['addr:housenumber'][!'addr:city'][!'addr:place']",
@@ -31,7 +31,7 @@ ALL_CHECKS = [
     # PLACE_WITH_STREET
     Check(
         message="Klucz addr:place oznacza brak nazwy ulicy. "
-                "Kombinacja z addr:street (który definiuje nazwę ulicy) jest niespójna.",
+                "Kombinacja z addr:street (który definiuje nazwę ulicy) jest błędna.",
         message_fix="Jeśli adres ma nazwę ulicy, zamień addr:place na addr:city. "
                     "W przeciwnym razie, usuń addr:street.",
         overpass="['addr:place']['addr:street']",
