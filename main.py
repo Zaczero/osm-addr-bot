@@ -126,9 +126,9 @@ def main():
 
             if not DRY_RUN:
                 osm.post_comment(changeset_id, message)
-                print(f'✅ Notified {changeset_id}')
+                print(f'✅ Notified https://www.openstreetmap.org/changeset/{changeset_id}')
             else:
-                print(f'✅ Notified {changeset_id} [DRY_RUN]')
+                print(f'✅ Notified https://www.openstreetmap.org/changeset/{changeset_id} [DRY_RUN]')
 
         if not DRY_RUN:
             s.update_state()
