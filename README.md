@@ -6,9 +6,13 @@
 
 An open-source and easily configurable OpenStreetMap address verification bot.
 
+### Execution output
+
 <img width="50%" src="https://github.com/Zaczero/osm-addr-bot/blob/main/resources/preview.png?raw=true" alt="Commandline preview">
 
-<img width="50%" src="https://github.com/Zaczero/osm-addr-bot/blob/main/resources/discussion.png?raw=true" alt="Discussion preview">
+### Generated discussion
+
+<img width="30%" src="https://github.com/Zaczero/osm-addr-bot/blob/main/resources/discussion.png?raw=true" alt="Discussion preview">
 
 ## Footer
 
