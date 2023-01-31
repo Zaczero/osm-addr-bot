@@ -4,7 +4,7 @@ from datetime import datetime
 from tqdm import tqdm
 
 from checks import Check, ALL_CHECKS
-from config import NEW_USER_THRESHOLD, PRO_USER_THRESHOLD
+from config import NEW_USER_THRESHOLD, PRO_USER_THRESHOLD, DRY_RUN
 from osmapi import OsmApi
 from overpass import Overpass
 from overpass_entry import OverpassEntry
@@ -121,10 +121,14 @@ def main():
 
             message = compose_message(user, changeset_issues)
 
-            osm.post_comment(changeset_id, message)
-            print(f'✅ Notified {changeset_id}')
+            if not DRY_RUN:
+                osm.post_comment(changeset_id, message)
+                print(f'✅ Notified {changeset_id}')
+            else:
+                print(f'✅ Notified {changeset_id} [DRY_RUN]')
 
-        s.update_state()
+        if not DRY_RUN:
+            s.update_state()
 
 
 if __name__ == '__main__':

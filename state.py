@@ -14,7 +14,7 @@ class State:
 
         # open for rw to ensure permissions
         with open(STATE_PATH, 'r+') as f:
-            state = int(f.read())
+            state = int(f.read().strip())
             now = int(time())
 
             self.start_ts = max(now - STATE_MAX_BACKLOG, state)
