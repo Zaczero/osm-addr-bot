@@ -132,7 +132,7 @@ def main():
                         changeset_issues.pop(check)
 
             if not changeset_issues:
-                print(f'🆗 Skipped {changeset_id}: Correct after post-validate')
+                print(f'🆗 Skipped {changeset_id}: No issues')
                 continue
 
             if not overpass.is_editing_address(changeset_issues):
