@@ -1,9 +1,9 @@
-import time
 from datetime import datetime
 
 from tqdm import tqdm
 
-from checks import Check, ALL_CHECKS
+from check import Check
+from checks import ALL_CHECKS
 from config import NEW_USER_THRESHOLD, PRO_USER_THRESHOLD, DRY_RUN, APP_BLACKLIST
 from osmapi import OsmApi
 from overpass import Overpass
@@ -89,7 +89,7 @@ def compose_message(user: dict, issues: dict[Check, list[OverpassEntry]]) -> str
 
 def main():
     if DRY_RUN:
-        print('🏜️ This is a dry run')
+        print('🌵 This is a dry run')
 
     print('🔒️ Logging in to OpenStreetMap')
     osm = OsmApi()
@@ -123,6 +123,18 @@ def main():
             if not should_discuss(changeset):
                 continue
 
+            for check, check_issues in list(changeset_issues.items()):
+                if check.post_fn:
+                    new_issues = check.post_fn(overpass, check_issues)
+                    if new_issues:
+                        changeset_issues[check] = new_issues
+                    else:
+                        changeset_issues.pop(check)
+
+            if not changeset_issues:
+                print(f'✔️ Skipped {changeset_id}: Correct after post-validate')
+                continue
+
             if not overpass.is_editing_address(changeset_issues):
                 print(f'🏡 Skipped {changeset_id}: Not editing addresses')
                 continue
@@ -139,6 +151,7 @@ def main():
                 osm.post_comment(changeset_id, message)
                 print(f'✅ Notified https://www.openstreetmap.org/changeset/{changeset_id}')
             else:
+                print(message)
                 print(f'✅ Notified https://www.openstreetmap.org/changeset/{changeset_id} [DRY_RUN]')
 
         if not DRY_RUN:

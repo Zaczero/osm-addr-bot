@@ -1,6 +1,6 @@
 from itertools import chain
 
-from checks import Check
+from check import Check
 from config import SEARCH_BBOX, SEARCH_RELATION
 from overpass_entry import OverpassEntry
 from state import State
@@ -29,12 +29,22 @@ def build_query(start_ts: int, end_ts: int, check: Check, timeout: int) -> str:
 
 def build_partition_query(timestamp: int, issues: list[OverpassEntry], timeout: int) -> str:
     date = format_timestamp(timestamp)
+    selector = ''.join(f'{i.element_type}(id:{i.element_id});' for i in issues)
 
     return f'[out:json][date:"{date}"][timeout:{timeout}]{get_bbox()};' \
-           f'(' + \
-        ';'.join(f'{i.element_type}(id:{i.element_id})' for i in issues) + ';' \
-                                                                           f');' \
-                                                                           f'out meta;'
+           f'({selector});' \
+           f'out meta;'
+
+
+def build_duplicates_query(issues: list[OverpassEntry], timeout: int) -> str:
+    body = ''.join(
+        f'{i.element_type}(id:{i.element_id})->.a;'
+        f'(nwr["addr:housenumber"](around.a:60)(if: t["addr:housenumber"] == "{i.tags["addr:housenumber"]}"); - .a;);'
+        f'out tags;'
+        f'.a out ids;'
+        for i in issues)
+
+    return f'[out:json][timeout:{timeout}]{get_bbox()};{body}'
 
 
 class Overpass:
@@ -73,6 +83,69 @@ class Overpass:
         ]
 
         return result
+
+    def query_duplicates(self, issues: list[OverpassEntry]) -> list[OverpassEntry]:
+        whitelist_tags = (
+            'addr:',
+            'building',
+            'capacity',
+            'fixme',
+            'height',
+            'layer',
+            'note',
+            'source'
+        )
+
+        equal_tags = (
+            'addr:city',
+            'addr:place',
+            'addr:street',
+            # 'addr:housenumber' - checked in query
+        )
+
+        def check_whitelist(tags: dict) -> bool:
+            return all(
+                any(
+                    t.startswith(w)
+                    for w in whitelist_tags
+                )
+                for t in tags
+            )
+
+        def check_equal_tags(left: dict, right: dict, key: str) -> bool:
+            return left.get(key, None) == right.get(key, None)
+
+        valid_issues = [i for i in issues if check_whitelist(i.tags)]
+
+        if not valid_issues:
+            return []
+
+        timeout = 300
+        query = build_duplicates_query(valid_issues, timeout=timeout)
+
+        r = self.c.post(self.base_url, data={'data': query}, timeout=timeout)
+        r.raise_for_status()
+
+        data = r.json()['elements']
+        data_iter = iter(data)
+        duplicated = set()
+
+        for issue in valid_issues:
+            for element in data_iter:
+                # check for end of section
+                if 'tags' not in element:
+                    assert element['type'] == issue.element_type and element['id'] == issue.element_id
+                    break
+
+                if not all(check_equal_tags(element['tags'], issue.tags, t) for t in equal_tags):
+                    continue
+
+                if not check_whitelist(element['tags']):
+                    continue
+
+                duplicated.add(issue)
+
+        return list(duplicated)
 
     def is_editing_address(self, issues: dict[Check, list[OverpassEntry]]) -> bool:
         timeout = 300

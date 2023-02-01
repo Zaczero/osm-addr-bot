@@ -1,12 +1,4 @@
-from dataclasses import dataclass
-
-
-@dataclass(frozen=True, kw_only=True, slots=True)
-class Check:
-    message: str
-    message_fix: str
-    overpass: str
-
+from check import Check
 
 # noinspection SpellCheckingInspection
 ALL_CHECKS = [
@@ -20,12 +12,21 @@ ALL_CHECKS = [
     # ),
     # TODO: validate is_in: https://www.openstreetmap.org/way/54562549
 
+    # DUPLICATED
+    Check(
+        message="Duplikat adresu w okolicy.",
+        message_fix="Adres można oznaczyć na dwa sposoby: na obszarze (dokładniejsze) albo na punkcie. "
+                    "Aktualizując adres, należy się upewnić, czy w okolicy nie pozostały żadne duplikaty.",
+        overpass="['addr:housenumber']",
+        post_fn=lambda o, i: o.query_duplicates(i)
+    ),
+
     # NUMBER_WITHOUT_CITY
     Check(
         message="Adres jest niekompletny, brakuje informacji o miejscowości.",
         message_fix="Jeśli adres ma nazwę ulicy, zastosuj kombinację addr:city + addr:street. "
                     "W przeciwnym razie, przekaż nazwę w addr:place.",
-        overpass="['addr:housenumber'][!'addr:city'][!'addr:place']",
+        overpass="['addr:housenumber'][!'addr:city'][!'addr:place']"
     ),
 
     # PLACE_WITH_STREET
@@ -34,7 +35,7 @@ ALL_CHECKS = [
                 "Kombinacja z addr:street (który definiuje nazwę ulicy) jest błędna.",
         message_fix="Jeśli adres ma nazwę ulicy, zamień addr:place na addr:city. "
                     "W przeciwnym razie, usuń addr:street.",
-        overpass="['addr:place']['addr:street']",
+        overpass="['addr:place']['addr:street']"
     ),
 
 ]
