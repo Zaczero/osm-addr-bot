@@ -1,5 +1,5 @@
 import functools
-from datetime import datetime
+from datetime import datetime, timezone
 
 from requests import Session
 
@@ -20,7 +20,7 @@ def get_http_client(*, auth: tuple | None = None, headers: dict | None = None) -
 
 def parse_timestamp(ts: str) -> int:
     date_format = '%Y-%m-%dT%H:%M:%SZ'
-    return int(datetime.strptime(ts, date_format).timestamp())
+    return int(datetime.strptime(ts, date_format).replace(tzinfo=timezone.utc).timestamp())
 
 
 def format_timestamp(ts: int) -> str:
