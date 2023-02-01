@@ -28,7 +28,7 @@ def build_query(start_ts: int, end_ts: int, check: Check, timeout: int) -> str:
 
 
 def build_partition_query(timestamp: int, issues: list[OverpassEntry], timeout: int) -> str:
-    date = format_timestamp(timestamp)
+    date = format_timestamp(timestamp - 1)
     selector = ''.join(f'{i.element_type}(id:{i.element_id});' for i in issues)
 
     return f'[out:json][date:"{date}"][timeout:{timeout}]{get_bbox()};' \
