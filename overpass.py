@@ -47,6 +47,22 @@ def build_duplicates_query(issues: list[OverpassEntry], timeout: int) -> str:
     return f'[out:json][timeout:{timeout}]{get_bbox()};{body}'
 
 
+def build_place_not_in_area_query(issues: list[OverpassEntry], timeout: int) -> str:
+    body = ''.join(
+        f'{i.element_type}(id:{i.element_id})->.a;'
+        f'(.a;.a>;.a>>;);'
+        f'is_in->.i;'
+        f'('
+        f'wr.i[!admin_level][name="{i.tags["addr:place"]}"];'
+        f'area.i[!admin_level][name="{i.tags["addr:place"]}"];'
+        f');'
+        f'out tags;'
+        f'.a out ids;'
+        for i in issues)
+
+    return f'[out:json][timeout:{timeout}]{get_bbox()};{body}'
+
+
 class Overpass:
     def __init__(self, state: State):
         self.state = state
@@ -128,9 +144,11 @@ class Overpass:
 
         data = r.json()['elements']
         data_iter = iter(data)
-        duplicated = set()
+        result = []
 
         for issue in valid_issues:
+            duplicated = False
+
             for element in data_iter:
                 # check for end of section
                 if 'tags' not in element:
@@ -143,9 +161,39 @@ class Overpass:
                 if not check_whitelist(element['tags']):
                     continue
 
-                duplicated.add(issue)
+                duplicated = True
 
-        return list(duplicated)
+            if duplicated:
+                result.append(issue)
+
+        return result
+
+    def query_place_not_in_area(self, issues: list[OverpassEntry]) -> list[OverpassEntry]:
+        timeout = 300
+        query = build_place_not_in_area_query(issues, timeout=timeout)
+
+        r = self.c.post(self.base_url, data={'data': query}, timeout=timeout)
+        r.raise_for_status()
+
+        data = r.json()['elements']
+        data_iter = iter(data)
+        result = []
+
+        for issue in issues:
+            place_ok = False
+
+            for element in data_iter:
+                # check for end of section
+                if 'tags' not in element:
+                    assert element['type'] == issue.element_type and element['id'] == issue.element_id
+                    break
+
+                place_ok = True
+
+            if not place_ok:
+                result.append(issue)
+
+        return result
 
     def is_editing_address(self, issues: dict[Check, list[OverpassEntry]]) -> bool:
         timeout = 300

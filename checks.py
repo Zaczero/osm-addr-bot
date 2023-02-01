@@ -4,13 +4,13 @@ from check import Check
 ALL_CHECKS = [
 
     # BAD_CITY_WITH_PLACE
-    # Check(
-    #     message="Wartość addr:city jest niezgodna z addr:place.",
-    #     message_fix="Jeśli adres ma nazwę ulicy, usuń addr:place i zastosuj kombinację addr:city + addr:street. "
-    #                 "W przeciwnym razie, pozostaw tylko addr:place.",
-    #     overpass="['addr:city']['addr:place'](if: t['addr:city'] != t['addr:place'])",
-    # ),
-    # TODO: validate is_in: https://www.openstreetmap.org/way/54562549
+    Check(
+        message="Wartość addr:city jest niezgodna z addr:place.",
+        message_fix="Jeśli adres ma nazwę ulicy, usuń addr:place i zastosuj kombinację addr:city + addr:street. "
+                    "W przeciwnym razie, pozostaw tylko addr:place.",
+        overpass="['addr:city']['addr:place'](if: t['addr:city'] != t['addr:place'])",
+        post_fn=lambda o, i: o.query_place_not_in_area(i)
+    ),
 
     # DUPLICATED
     Check(

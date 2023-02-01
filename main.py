@@ -157,6 +157,8 @@ def main():
         if not DRY_RUN:
             s.update_state()
 
+    print('Finished')
+
 
 if __name__ == '__main__':
     main()
