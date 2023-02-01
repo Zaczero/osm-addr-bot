@@ -12,6 +12,9 @@ APP_BLACKLIST = (
     'Every Door',
     'OsmAnd',
     'Organic Maps',
+    'MAPS.ME',
+
+    # backup, general blacklist
     'Android',
     'iOS'
 )

@@ -4,12 +4,13 @@ from checks import Check
 from utils import parse_timestamp
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class OverpassEntry:
     timestamp: int
     changeset_id: int
     element_type: str
     element_id: int
+    tags: dict
     reason: Check
 
     # noinspection PyTypeChecker

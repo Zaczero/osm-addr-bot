@@ -100,15 +100,16 @@ def main():
         print(f'Time range: {datetime.utcfromtimestamp(s.start_ts)} - {datetime.utcfromtimestamp(s.end_ts)}')
 
         overpass = Overpass(s)
-
-        if not overpass.is_up_to_date(s.end_ts):
-            print('🕒️ Overpass is updating, please try again shortly')
-            return
-
         issues: dict[int, dict[Check, list[OverpassEntry]]] = {}
 
         for check in tqdm(ALL_CHECKS, desc='Querying issues'):
-            for i in overpass.query(check):
+            queried = overpass.query(check)
+
+            if queried is False:
+                print('🕒️ Overpass is updating, please try again shortly')
+                return
+
+            for i in queried:
                 issues \
                     .setdefault(i.changeset_id, {}) \
                     .setdefault(i.reason, []) \
@@ -120,6 +121,10 @@ def main():
             changeset = osm.get_changeset(changeset_id)
 
             if not should_discuss(changeset):
+                continue
+
+            if not overpass.is_editing_address(changeset_issues):
+                print(f'🏡 Skipped {changeset_id}: Not editing addresses')
                 continue
 
             user = osm.get_user(changeset['uid'])

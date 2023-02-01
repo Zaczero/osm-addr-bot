@@ -1,3 +1,5 @@
+from itertools import chain
+
 from checks import Check
 from config import SEARCH_BBOX, SEARCH_RELATION
 from overpass_entry import OverpassEntry
@@ -17,12 +19,22 @@ def build_query(start_ts: int, end_ts: int, check: Check, timeout: int) -> str:
     start = format_timestamp(start_ts)
     end = format_timestamp(end_ts)
 
-    return f'[out:csv(::timestamp,::changeset,::type,::id;false)][timeout:{timeout}]{get_bbox()};' \
+    return f'[out:json][timeout:{timeout}]{get_bbox()};' \
            f'relation(id:{SEARCH_RELATION});map_to_area;' \
            f'(' \
            f'nwr{check.overpass}(changed:"{start}","{end}")(area._);' \
            f');' \
            f'out meta;'
+
+
+def build_partition_query(timestamp: int, issues: list[OverpassEntry], timeout: int) -> str:
+    date = format_timestamp(timestamp)
+
+    return f'[out:json][date:"{date}"][timeout:{timeout}]{get_bbox()};' \
+           f'(' + \
+        ';'.join(f'{i.element_type}(id:{i.element_id})' for i in issues) + ';' \
+                                                                           f');' \
+                                                                           f'out meta;'
 
 
 class Overpass:
@@ -32,27 +44,65 @@ class Overpass:
         self.base_url = 'https://overpass.monicz.dev/api/interpreter'
         self.c = get_http_client()
 
-    def is_up_to_date(self, end_ts: int) -> bool:
-        r = self.c.post(self.base_url, data={'data': '[out:json][timeout:15];'})
-        r.raise_for_status()
-
-        data = r.json()
-        overpass_ts = parse_timestamp(data['osm3s']['timestamp_osm_base'])
-
-        return end_ts < overpass_ts
-
-    def query(self, check: Check) -> list[OverpassEntry]:
+    def query(self, check: Check) -> list[OverpassEntry] | bool:
         timeout = 300
         query = build_query(self.state.start_ts, self.state.end_ts, check, timeout=timeout)
 
         r = self.c.post(self.base_url, data={'data': query}, timeout=timeout)
         r.raise_for_status()
 
+        data = r.json()
+        overpass_ts = parse_timestamp(data['osm3s']['timestamp_osm_base'])
+
+        if self.state.end_ts >= overpass_ts:
+            return False
+
+        elements = data['elements']
+
         result = [
             r
-            for r
-            in (OverpassEntry(*(row.split('\t')), reason=check) for row in r.text.split('\n') if row)
+            for r in (OverpassEntry(
+                timestamp=e['timestamp'],
+                changeset_id=e['changeset'],
+                element_type=e['type'],
+                element_id=e['id'],
+                tags=e['tags'],
+                reason=check
+            ) for e in elements)
             if self.state.start_ts <= r.timestamp <= self.state.end_ts
         ]
 
         return result
+
+    def is_editing_address(self, issues: dict[Check, list[OverpassEntry]]) -> bool:
+        timeout = 300
+        partitions: dict[int, list[OverpassEntry]] = {}
+        issues_map: dict[str, dict[int, OverpassEntry]] = {}
+
+        for issue in chain.from_iterable(issues.values()):
+            partitions.setdefault(issue.timestamp, []).append(issue)
+            issues_map.setdefault(issue.element_type, {})[issue.element_id] = issue
+
+        for partition_time, partition_issues in partitions.items():
+            partition_query = build_partition_query(partition_time, partition_issues, timeout=timeout)
+
+            r = self.c.post(self.base_url, data={'data': partition_query}, timeout=timeout)
+            r.raise_for_status()
+
+            elements = r.json()['elements']
+
+            # fewer elements means some were created
+            if len(elements) < len(partition_issues):
+                return True
+
+            if len(elements) > len(partition_issues):
+                raise
+
+            for element in elements:
+                ref_issue = issues_map[element['type']][element['id']]
+                tags_diff = {k: v for k, v in set(ref_issue.tags.items()) - set(element.get('tags', {}).items())}
+
+                if any(k.startswith('addr:') for k in tags_diff):
+                    return True
+
+        return False
