@@ -1,3 +1,5 @@
+import sys
+import time
 from datetime import datetime
 
 from tqdm import tqdm
@@ -115,6 +117,8 @@ def compose_message(user: dict, issues: dict[Check, list[OverpassEntry]]) -> str
 
 
 def main():
+    time_start = time.perf_counter()
+
     if DRY_RUN:
         print('🌵 This is a dry run')
 
@@ -129,7 +133,7 @@ def main():
         overpass = Overpass(s)
         issues: dict[int, dict[Check, list[OverpassEntry]]] = {}
 
-        for check in tqdm(ALL_CHECKS, desc='Querying issues'):
+        for check in tqdm(ALL_CHECKS, desc='Querying issues', file=sys.stdout):
             queried = overpass.query(check)
 
             if queried is False:
@@ -180,7 +184,7 @@ def main():
         if not DRY_RUN:
             s.update_state()
 
-    print('Finished')
+    print(f'🏁 Finished in {time.perf_counter() - time_start:.1F} sec')
 
 
 if __name__ == '__main__':
