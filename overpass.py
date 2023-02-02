@@ -39,7 +39,10 @@ def build_partition_query(timestamp: int, issues: list[OverpassEntry], timeout: 
 def build_duplicates_query(issues: list[OverpassEntry], timeout: int) -> str:
     body = ''.join(
         f'{i.element_type}(id:{i.element_id})->.a;'
-        f'(nwr["addr:housenumber"](around.a:60)(if: t["addr:housenumber"] == "{i.tags["addr:housenumber"]}"); - .a;);'
+        f'('
+        f'nwr["addr:housenumber"](around.a:65)(if: t["addr:housenumber"] == "{i.tags["addr:housenumber"]}"); - '
+        f'{i.element_type}["addr:housenumber"](around.a:0);'
+        f');'
         f'out tags;'
         f'.a out ids;'
         for i in issues)
