@@ -105,7 +105,7 @@ def compose_message(user: dict, issues: dict[Check, list[OverpassEntry]]) -> str
     if pro_user:
         message += 'Pozdrawiam! 🦀'
     else:
-        message += 'Dokumentacja adresów:\n' \
+        message += 'Dokumentacja adresów (po polsku):\n' \
                    'https://wiki.openstreetmap.org/wiki/Pl:Key:addr:*\n' \
                    '\n' \
                    'W razie problemów lub pytań, proszę pisać. Chętnie pomogę.\n' \
