@@ -154,14 +154,15 @@ def main():
             if not should_discuss(changeset):
                 continue
 
-            if not overpass.is_editing_address(changeset_issues):
-                print(f'🏡 Skipped {changeset_id}: Not editing addresses')
-                continue
-
             filter_post_fn(overpass, changeset_issues)
 
             if not changeset_issues:
                 print(f'🆗 Skipped {changeset_id}: No issues')
+                continue
+
+            # this must be done after post_fn; issues may change because of it
+            if not overpass.is_editing_address(changeset_issues):
+                print(f'🏡 Skipped {changeset_id}: Not editing addresses')
                 continue
 
             filter_priority(changeset_issues)
