@@ -12,6 +12,13 @@ ALL_CHECKS = [
         post_fn=lambda o, i: o.query_place_not_in_area(i)
     ),
 
+    # BAD_POSTCODE
+    Check(
+        message="Nieprawidłowa wartość addr:postcode.",
+        message_fix="Kod pocztowy powinien być formatu XX-XXX, gdzie X oznacza cyfrę.",
+        overpass="['addr:postcode']['addr:postcode'!~'^[0-9]{2}-[0-9]{3}([;,][0-9]{2}-[0-9]{3})*$']"
+    ),
+
     # DUPLICATED
     Check(
         message="Duplikat adresu w okolicy.",
