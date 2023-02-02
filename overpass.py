@@ -1,5 +1,4 @@
 from itertools import chain
-from pprint import pprint
 
 from check import Check
 from config import SEARCH_BBOX, SEARCH_RELATION
@@ -15,16 +14,19 @@ def get_bbox() -> str:
     return f'[bbox:{min_lat},{min_lon},{max_lat},{max_lon}]'
 
 
-def build_query(start_ts: int, end_ts: int, check: Check, timeout: int) -> str:
+def build_query(start_ts: int, end_ts: int, checks: list[Check], timeout: int) -> str:
     assert start_ts < end_ts
     start = format_timestamp(start_ts)
     end = format_timestamp(end_ts)
+    body = ''.join(
+        f'nwr{c.overpass}(changed:"{start}","{end}")(area.a);'
+        f'out meta;'
+        f'out count;'
+        for c in checks)
 
     return f'[out:json][timeout:{timeout}]{get_bbox()};' \
            f'relation(id:{SEARCH_RELATION});' \
-           f'map_to_area;' \
-           f'nwr{check.overpass}(changed:"{start}","{end}")(area);' \
-           f'out meta;'
+           f'map_to_area->.a;{body}'
 
 
 def build_partition_query(timestamp: int, issues: list[OverpassEntry], timeout: int) -> str:
@@ -84,9 +86,9 @@ class Overpass:
         self.base_url = 'https://overpass.monicz.dev/api/interpreter'
         self.c = get_http_client()
 
-    def query(self, check: Check) -> list[OverpassEntry] | bool:
+    def query(self, checks: list[Check]) -> dict[Check, list[OverpassEntry]] | bool:
         timeout = 300
-        query = build_query(self.state.start_ts, self.state.end_ts, check, timeout=timeout)
+        query = build_query(self.state.start_ts, self.state.end_ts, checks, timeout=timeout)
 
         r = self.c.post(self.base_url, data={'data': query}, timeout=timeout)
         r.raise_for_status()
@@ -97,19 +99,26 @@ class Overpass:
         if self.state.end_ts >= overpass_ts:
             return False
 
-        elements = data['elements']
+        data = r.json()['elements']
+        data_iter = iter(data)
+        result = {}
 
-        result = [
-            r
-            for r in (OverpassEntry(
-                timestamp=e['timestamp'],
-                changeset_id=e['changeset'],
-                element_type=e['type'],
-                element_id=e['id'],
-                tags=e['tags']
-            ) for e in elements)
-            if self.state.start_ts <= r.timestamp <= self.state.end_ts
-        ]
+        for check in checks:
+            result[check] = check_list = []
+
+            for e in data_iter:
+                # check for end of section
+                if e['type'] == 'count':
+                    assert int(e['tags']['total']) == len(check_list)
+                    break
+
+                check_list.append(OverpassEntry(
+                    timestamp=e['timestamp'],
+                    changeset_id=e['changeset'],
+                    element_type=e['type'],
+                    element_id=e['id'],
+                    tags=e['tags']
+                ))
 
         return result
 

@@ -1,5 +1,6 @@
 import sys
 import time
+from collections import defaultdict
 from datetime import datetime
 
 from tqdm import tqdm
@@ -128,23 +129,21 @@ def main():
     print(f'👤 Welcome, {user["display_name"]}!')
 
     with State() as s:
-        print(f'Time range: {datetime.utcfromtimestamp(s.start_ts)} - {datetime.utcfromtimestamp(s.end_ts)}')
-
         overpass = Overpass(s)
-        issues: dict[int, dict[Check, list[OverpassEntry]]] = {}
 
-        for check in tqdm(ALL_CHECKS, desc='Querying issues', file=sys.stdout):
-            queried = overpass.query(check)
+        print(f'Time range: {datetime.utcfromtimestamp(s.start_ts)} - {datetime.utcfromtimestamp(s.end_ts)}')
+        print(f'Querying issues…')
+        queried = overpass.query(ALL_CHECKS)
 
-            if queried is False:
-                print('🕒️ Overpass is updating, please try again shortly')
-                return
+        if queried is False:
+            print('🕒️ Overpass is updating, try again shortly')
+            return
 
-            for i in queried:
-                issues \
-                    .setdefault(i.changeset_id, {}) \
-                    .setdefault(check, []) \
-                    .append(i)
+        issues: dict[int, dict[Check, list[OverpassEntry]]] = defaultdict(lambda: defaultdict(list))
+
+        for check, check_issues in queried.items():
+            for i in check_issues:
+                issues[i.changeset_id][check].append(i)
 
         print(f'Total changesets: {len(issues)}')
 
