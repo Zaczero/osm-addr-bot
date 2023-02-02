@@ -185,6 +185,7 @@ def main():
             s.update_state()
 
     print(f'🏁 Finished in {time.perf_counter() - time_start:.1F} sec')
+    print()
 
 
 if __name__ == '__main__':
