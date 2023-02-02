@@ -1,4 +1,5 @@
 from itertools import chain
+from pprint import pprint
 
 from check import Check
 from config import SEARCH_BBOX, SEARCH_RELATION
@@ -236,15 +237,15 @@ class Overpass:
 
     def is_editing_address(self, issues: dict[Check, list[OverpassEntry]]) -> bool:
         timeout = 300
-        partitions: dict[int, list[OverpassEntry]] = {}
-        issues_map: dict[str, dict[int, OverpassEntry]] = {}
+        partitions: dict[int, set[OverpassEntry]] = {}
+        entry_map: dict[str, dict[int, OverpassEntry]] = {}
 
-        for issue in chain.from_iterable(issues.values()):
-            partitions.setdefault(issue.timestamp, []).append(issue)
-            issues_map.setdefault(issue.element_type, {})[issue.element_id] = issue
+        for entry in chain.from_iterable(issues.values()):
+            partitions.setdefault(entry.timestamp, set()).add(entry)
+            entry_map.setdefault(entry.element_type, {})[entry.element_id] = entry
 
         for partition_time, partition_issues in partitions.items():
-            partition_query = build_partition_query(partition_time, partition_issues, timeout=timeout)
+            partition_query = build_partition_query(partition_time, list(partition_issues), timeout=timeout)
 
             r = self.c.post(self.base_url, data={'data': partition_query}, timeout=timeout)
             r.raise_for_status()
@@ -259,8 +260,8 @@ class Overpass:
                 raise
 
             for element in elements:
-                ref_issue = issues_map[element['type']][element['id']]
-                tags_diff = {k: v for k, v in set(ref_issue.tags.items()) - set(element.get('tags', {}).items())}
+                ref_entry = entry_map[element['type']][element['id']]
+                tags_diff = {k: v for k, v in set(ref_entry.tags.items()) - set(element.get('tags', {}).items())}
 
                 if any(k.startswith('addr:') for k in tags_diff):
                     return True
