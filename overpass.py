@@ -119,6 +119,8 @@ class Overpass:
                     element_id=e['id'],
                     tags=e['tags']
                 ))
+            else:
+                raise
 
         return result
 
@@ -184,6 +186,8 @@ class Overpass:
                     continue
 
                 duplicated = True
+            else:
+                raise
 
             if duplicated:
                 result.append(issue)
@@ -211,6 +215,8 @@ class Overpass:
                     break
 
                 place_ok = True
+            else:
+                raise
 
             if not place_ok:
                 result.append(issue)
@@ -238,6 +244,8 @@ class Overpass:
                     break
 
                 street_ok = True
+            else:
+                raise
 
             if not street_ok:
                 result.append(issue)
