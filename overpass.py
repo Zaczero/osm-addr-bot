@@ -20,10 +20,9 @@ def build_query(start_ts: int, end_ts: int, check: Check, timeout: int) -> str:
     end = format_timestamp(end_ts)
 
     return f'[out:json][timeout:{timeout}]{get_bbox()};' \
-           f'relation(id:{SEARCH_RELATION});map_to_area;' \
-           f'(' \
-           f'nwr{check.overpass}(changed:"{start}","{end}")(area._);' \
-           f');' \
+           f'relation(id:{SEARCH_RELATION});' \
+           f'map_to_area;' \
+           f'nwr{check.overpass}(changed:"{start}","{end}")(area);' \
            f'out meta;'
 
 
@@ -40,7 +39,7 @@ def build_duplicates_query(issues: list[OverpassEntry], timeout: int) -> str:
     body = ''.join(
         f'{i.element_type}(id:{i.element_id})->.a;'
         f'('
-        f'nwr["addr:housenumber"](around.a:65)(if: t["addr:housenumber"] == "{i.tags["addr:housenumber"]}"); - '
+        f'nwr["addr:housenumber"](around.a:100)(if: t["addr:housenumber"] == "{i.tags["addr:housenumber"]}"); - '
         f'{i.element_type}["addr:housenumber"](around.a:0);'
         f');'
         f'out tags;'
@@ -59,6 +58,17 @@ def build_place_not_in_area_query(issues: list[OverpassEntry], timeout: int) -> 
         f'wr.i[!admin_level][name="{i.tags["addr:place"]}"];'
         f'area.i[!admin_level][name="{i.tags["addr:place"]}"];'
         f');'
+        f'out tags;'
+        f'.a out ids;'
+        for i in issues)
+
+    return f'[out:json][timeout:{timeout}]{get_bbox()};{body}'
+
+
+def build_street_names_query(issues: list[OverpassEntry], timeout: int) -> str:
+    body = ''.join(
+        f'{i.element_type}(id:{i.element_id})->.a;'
+        f'wr[highway][name="{i.tags["addr:street"]}"](around.a:500);'
         f'out tags;'
         f'.a out ids;'
         for i in issues)
@@ -95,8 +105,7 @@ class Overpass:
                 changeset_id=e['changeset'],
                 element_type=e['type'],
                 element_id=e['id'],
-                tags=e['tags'],
-                reason=check
+                tags=e['tags']
             ) for e in elements)
             if self.state.start_ts <= r.timestamp <= self.state.end_ts
         ]
@@ -194,6 +203,33 @@ class Overpass:
                 place_ok = True
 
             if not place_ok:
+                result.append(issue)
+
+        return result
+
+    def query_street_names(self, issues: list[OverpassEntry]) -> list[OverpassEntry]:
+        timeout = 300
+        query = build_street_names_query(issues, timeout=timeout)
+
+        r = self.c.post(self.base_url, data={'data': query}, timeout=timeout)
+        r.raise_for_status()
+
+        data = r.json()['elements']
+        data_iter = iter(data)
+        result = []
+
+        for issue in issues:
+            street_ok = False
+
+            for element in data_iter:
+                # check for end of section
+                if 'tags' not in element:
+                    assert element['type'] == issue.element_type and element['id'] == issue.element_id
+                    break
+
+                street_ok = True
+
+            if not street_ok:
                 result.append(issue)
 
         return result

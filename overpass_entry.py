@@ -11,7 +11,6 @@ class OverpassEntry:
     element_type: str
     element_id: int
     tags: dict
-    reason: Check
     _hash: int = 0
 
     # noinspection PyTypeChecker

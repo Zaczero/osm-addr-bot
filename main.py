@@ -46,6 +46,33 @@ def should_discuss(changeset: dict) -> bool:
     return True
 
 
+def filter_post_fn(overpass: Overpass, issues: dict[Check, list[OverpassEntry]]) -> None:
+    for check, check_issues in list(issues.items()):
+        if check.post_fn:
+            new_issues = check.post_fn(overpass, check_issues)
+            if new_issues:
+                issues[check] = new_issues
+            else:
+                issues.pop(check)
+
+
+def filter_priority(issues: dict[Check, list[OverpassEntry]]) -> None:
+    max_priorities = {}
+
+    for check, check_issues in sorted(issues.items(), key=lambda t: t[0].priority, reverse=True):
+        new_issues = []
+
+        for check_issue in check_issues:
+            if max_priorities.get(check_issue, 0) <= check.priority:
+                max_priorities[check_issue] = check.priority
+                new_issues.append(check_issue)
+
+        if new_issues:
+            issues[check] = new_issues
+        else:
+            issues.pop(check)
+
+
 # noinspection SpellCheckingInspection
 def compose_message(user: dict, issues: dict[Check, list[OverpassEntry]]) -> str:
     new_user = user['changesets']['count'] <= NEW_USER_THRESHOLD
@@ -112,7 +139,7 @@ def main():
             for i in queried:
                 issues \
                     .setdefault(i.changeset_id, {}) \
-                    .setdefault(i.reason, []) \
+                    .setdefault(check, []) \
                     .append(i)
 
         print(f'Total changesets: {len(issues)}')
@@ -123,21 +150,17 @@ def main():
             if not should_discuss(changeset):
                 continue
 
-            for check, check_issues in list(changeset_issues.items()):
-                if check.post_fn:
-                    new_issues = check.post_fn(overpass, check_issues)
-                    if new_issues:
-                        changeset_issues[check] = new_issues
-                    else:
-                        changeset_issues.pop(check)
+            if not overpass.is_editing_address(changeset_issues):
+                print(f'🏡 Skipped {changeset_id}: Not editing addresses')
+                continue
+
+            filter_post_fn(overpass, changeset_issues)
 
             if not changeset_issues:
                 print(f'🆗 Skipped {changeset_id}: No issues')
                 continue
 
-            if not overpass.is_editing_address(changeset_issues):
-                print(f'🏡 Skipped {changeset_id}: Not editing addresses')
-                continue
+            filter_priority(changeset_issues)
 
             user = osm.get_user(changeset['uid'])
 
