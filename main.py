@@ -153,7 +153,7 @@ def main():
         for changeset_id, changeset_issues in issues.items():
             changeset = osm.get_changeset(changeset_id)
 
-            if changeset['open'] or True:
+            if changeset['open']:
                 print(f'🔓️ Rescheduled {changeset_id}: Open changeset')
                 s.reschedule_issues(changeset_id, changeset_issues)
                 continue

@@ -22,6 +22,5 @@ RUN pipenv install --deploy --ignore-pipfile && \
 COPY --chown=1000:1000 LICENSE *.py ./
 RUN python -m compileall .
 
-VOLUME ["/app/state.txt"]
 ENTRYPOINT ["pipenv", "run", "python", "main.py"]
 CMD []

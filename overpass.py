@@ -47,7 +47,7 @@ def build_duplicates_query(issues: list[OverpassEntry], timeout: int) -> str:
     body = ''.join(
         f'{i.element_type}(id:{i.element_id})->.a;'
         f'('
-        f'nwr["addr:housenumber"](around.a:100)(if: t["addr:housenumber"] == "{i.tags["addr:housenumber"]}"); - '
+        f'nwr["addr:housenumber"](around.a:100)(if: t["addr:housenumber"] == "{escape_overpass(i.tags["addr:housenumber"])}"); - '
         f'{i.element_type}["addr:housenumber"](around.a:0);'
         f');'
         f'out tags;'

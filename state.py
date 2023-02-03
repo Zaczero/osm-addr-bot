@@ -48,6 +48,8 @@ class State:
 
     def merge_rescheduled_issues(self, issues: dict[int, dict[Check, list[OverpassEntry]]]) -> int:
         for changeset_id, changeset_issues in self._rescheduled_issues.items():
+            changeset_id = int(changeset_id)
+
             for check_identifier, check_issues_d in changeset_issues.items():
                 check = next(c for c in ALL_CHECKS if c.identifier == check_identifier)
                 check_issues = (OverpassEntry(**d) for d in check_issues_d)
