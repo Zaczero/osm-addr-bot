@@ -29,6 +29,11 @@ SEARCH_BBOX = {
 }
 
 STATE_PATH = Path('state.txt')
+
+# auto upgrade file type for new users
+if not STATE_PATH.exists():
+    STATE_PATH = Path('state.json')
+
 STATE_MAX_BACKLOG = 3600 * 24 * 3  # 3 days
 STATE_MAX_DIFF = 3600 * 8  # 8 hours
 STATE_MIN_DELAY = 60 * 5  # 5 minutes

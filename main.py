@@ -20,10 +20,6 @@ LINK_SORT_DICT = {
 def should_discuss(changeset: dict) -> bool:
     changeset_id = changeset['id']
 
-    if changeset['open']:
-        print(f'🔓️ Skipped {changeset_id}: Open changeset')
-        return False
-
     if changeset['changes_count'] > 2500:
         print(f'🤖 Skipped {changeset_id}: Possible import')
         return False
@@ -146,10 +142,21 @@ def main():
             for i in check_issues:
                 issues[i.changeset_id][check].append(i)
 
-        print(f'Total changesets: {len(issues)}')
+        queried_len = len(issues)
+        merged_len = s.merge_rescheduled_issues(issues)
+
+        if merged_len:
+            print(f'Total changesets: {queried_len}+{merged_len}')
+        else:
+            print(f'Total changesets: {queried_len}')
 
         for changeset_id, changeset_issues in issues.items():
             changeset = osm.get_changeset(changeset_id)
+
+            if changeset['open'] or True:
+                print(f'🔓️ Rescheduled {changeset_id}: Open changeset')
+                s.reschedule_issues(changeset_id, changeset_issues)
+                continue
 
             if not should_discuss(changeset):
                 continue

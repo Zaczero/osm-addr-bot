@@ -4,10 +4,13 @@ from check import Check
 ALL_CHECKS = [
     # TODO: query all and perform offline validation
     # TODO: more mistype checks
+    # TODO: batched post_fn for all changesets
+    # TODO: simplify checks identifier system
 
-    # BAD_CITY_WITH_PLACE
     Check(
+        identifier='BAD_CITY_WITH_PLACE',
         priority=50,
+
         message="Wartość addr:city jest niezgodna z addr:place.",
         message_fix="Jeśli adres ma nazwę ulicy, usuń addr:place i zastosuj kombinację addr:city + addr:street. "
                     "Jeśli nie, pozostaw tylko addr:place.",
@@ -16,17 +19,19 @@ ALL_CHECKS = [
         post_fn=lambda o, i: o.query_place_not_in_area(i)
     ),
 
-    # BAD_POSTCODE_FORMAT
     Check(
+        identifier='BAD_POSTCODE_FORMAT',
         priority=100,
+
         message="Nieprawidłowa wartość addr:postcode.",
         message_fix="Kod pocztowy powinien być formatu XX-XXX, gdzie X oznacza cyfrę.",
         overpass="['addr:postcode']['addr:postcode'!~'^[0-9]{2}-[0-9]{3}([;,][0-9]{2}-[0-9]{3})*$']"
     ),
 
-    # DUPLICATED
     Check(
+        identifier='DUPLICATED',
         priority=0,
+
         message="Duplikat adresu w okolicy.",
         message_fix="Adres można oznaczyć na dwa sposoby: na obszarze (dokładniejsze) albo na punkcie. "
                     "Aktualizując adres, należy się upewnić, czy w okolicy nie pozostały żadne duplikaty.",
@@ -35,9 +40,10 @@ ALL_CHECKS = [
         post_fn=lambda o, i: o.query_duplicates(i)
     ),
 
-    # NUMBER_WITHOUT_CITY
     Check(
+        identifier='NUMBER_WITHOUT_CITY',
         priority=30,
+
         message="Adres jest niekompletny, brakuje informacji o miejscowości.",
         message_fix="Jeśli adres ma nazwę ulicy, zastosuj kombinację addr:city + addr:street. "
                     "Jeśli nie, przekaż nazwę miejscowości w addr:place.",
@@ -45,9 +51,10 @@ ALL_CHECKS = [
         overpass_raw=True,
     ),
 
-    # NUMBER_WITHOUT_STREET
     Check(
+        identifier='NUMBER_WITHOUT_STREET',
         priority=30,
+
         message="Adres jest niekompletny, brakuje informacji o nazwie ulicy.",
         message_fix="Jeśli adres ma nazwę ulicy, dodaj ją w addr:street. "
                     "Jeśli nie, zamień addr:city na addr:place - tak oznaczamy adresy bez ulic.",
@@ -55,9 +62,10 @@ ALL_CHECKS = [
         overpass_raw=True,
     ),
 
-    # PLACE_MISTYPE
     Check(
+        identifier='PLACE_MISTYPE',
         priority=80,
+
         message="Wartość addr:place zawiera błąd w pisowni.",
         message_fix="Upewnij się, czy wielkość liter jest poprawna, oraz czy nigdzie nie ma dodatkowych znaków.",
         overpass=".p",
@@ -65,9 +73,10 @@ ALL_CHECKS = [
         post_fn=lambda o, i: o.query_place_mistype(i)
     ),
 
-    # PLACE_WITH_STREET
     Check(
+        identifier='PLACE_WITH_STREET',
         priority=100,
+
         message="Klucz addr:place oznacza brak nazwy ulicy. "
                 "Kombinacja z addr:street (który definiuje nazwę ulicy) jest błędna.",
         message_fix="Jeśli adres ma nazwę ulicy, zamień addr:place na addr:city. "
@@ -76,9 +85,10 @@ ALL_CHECKS = [
         overpass_raw=True,
     ),
 
-    # UNKNOWN_STREET_NAME
     Check(
+        identifier='UNKNOWN_STREET_NAME',
         priority=10,
+
         message="Nazwa ulicy nie istnieje w okolicy.",
         message_fix="Jeśli adres ma nazwę ulicy, upewnij się, że jest ona poprawna. "
                     "Jeśli nie, usuń addr:street, a nazwę miejscowości przekaż w addr:place.",

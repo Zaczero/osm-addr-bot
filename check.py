@@ -4,6 +4,7 @@ from typing import Callable, Any, Optional
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class Check:
+    identifier: str
     priority: int
     message: str
     message_fix: str
