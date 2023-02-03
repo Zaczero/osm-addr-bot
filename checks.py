@@ -11,7 +11,7 @@ ALL_CHECKS = [
                     "Jeśli nie, pozostaw tylko addr:place.",
         overpass="nwr.p['addr:city'](if: t['addr:city'] != t['addr:place'])",
         overpass_raw=True,
-        post_fn=lambda o, i: o.query_place_not_in_area(i, mistype_mode=False)
+        post_fn=lambda o, i: o.query_place_not_in_area(i)
     ),
 
     # BAD_POSTCODE_FORMAT
@@ -61,7 +61,7 @@ ALL_CHECKS = [
         message_fix="Upewnij się, czy wielkość liter jest poprawna, oraz czy nigdzie nie ma dodatkowych znaków.",
         overpass=".p",
         overpass_raw=True,
-        post_fn=lambda o, i: o.query_place_not_in_area(i, mistype_mode=True)
+        post_fn=lambda o, i: o.query_place_mistype(i)
     ),
 
     # PLACE_WITH_STREET

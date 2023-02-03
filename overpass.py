@@ -62,7 +62,20 @@ def build_place_not_in_area_query(issues: list[OverpassEntry], timeout: int) -> 
         f'{i.element_type}(id:{i.element_id});' +
         ('' if i.element_type == 'node' else f'node({i.element_type[0]});') +
         f'is_in;'
-        f'wr._[name];'
+        f'wr._[!admin_level][name="{i.tags["addr:place"]}"];'
+        f'out tags;'
+        f'out count;'
+        for i in issues)
+
+    return f'[out:json][timeout:{timeout}]{get_bbox()};{body}'
+
+
+def build_place_mistype_query(issues: list[OverpassEntry], timeout: int) -> str:
+    body = ''.join(
+        f'{i.element_type}(id:{i.element_id});' +
+        ('' if i.element_type == 'node' else f'node({i.element_type[0]});') +
+        f'is_in;'
+        f'wr._[!admin_level][name];'
         f'out tags;'
         f'out count;'
         for i in issues)
@@ -204,9 +217,40 @@ class Overpass:
 
         return result
 
-    def query_place_not_in_area(self, issues: list[OverpassEntry], mistype_mode: bool) -> list[OverpassEntry]:
+    def query_place_not_in_area(self, issues: list[OverpassEntry]) -> list[OverpassEntry]:
         timeout = 300
         query = build_place_not_in_area_query(issues, timeout=timeout)
+
+        r = self.c.post(self.base_url, data={'data': query}, timeout=timeout)
+        r.raise_for_status()
+
+        data = r.json()['elements']
+        data_iter = iter(data)
+        result = []
+
+        for issue in issues:
+            return_size = 0
+            place_ok = False
+
+            for e in data_iter:
+                # check for end of section
+                if e['type'] == 'count':
+                    assert int(e['tags']['total']) == return_size
+                    break
+
+                return_size += 1
+                place_ok = True
+            else:
+                raise
+
+            if not place_ok:
+                result.append(issue)
+
+        return result
+
+    def query_place_mistype(self, issues: list[OverpassEntry]) -> list[OverpassEntry]:
+        timeout = 300
+        query = build_place_mistype_query(issues, timeout=timeout)
 
         r = self.c.post(self.base_url, data={'data': query}, timeout=timeout)
         r.raise_for_status()
@@ -228,21 +272,12 @@ class Overpass:
             else:
                 raise
 
-            place_ok = issue.tags['addr:place'] in is_in
-
-            # place_ok <=> addr:place is ( valid OR not mistype )
-            if not place_ok and mistype_mode:
+            if issue.tags['addr:place'] not in is_in:
                 addr_place_alt = issue.tags['addr:place'].strip().lower()
-                is_in_mistype = any(addr_place_alt == i.strip().lower() for i in is_in)
-                place_ok = not is_in_mistype
+                is_mistype = any(addr_place_alt == i.strip().lower() for i in is_in)
 
-                if not place_ok:
-                    print(is_in_mistype)
-                    pprint(issue.tags)
-                    pprint(is_in)
-
-            if not place_ok:
-                result.append(issue)
+                if is_mistype:
+                    result.append(issue)
 
         return result
 
