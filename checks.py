@@ -9,8 +9,9 @@ ALL_CHECKS = [
         message="Wartość addr:city jest niezgodna z addr:place.",
         message_fix="Jeśli adres ma nazwę ulicy, usuń addr:place i zastosuj kombinację addr:city + addr:street. "
                     "Jeśli nie, pozostaw tylko addr:place.",
-        overpass="['addr:city']['addr:place'](if: t['addr:city'] != t['addr:place'])",
-        post_fn=lambda o, i: o.query_place_not_in_area(i)
+        overpass="nwr.p['addr:city'](if: t['addr:city'] != t['addr:place'])",
+        overpass_raw=True,
+        post_fn=lambda o, i: o.query_place_not_in_area(i, mistype_mode=False)
     ),
 
     # BAD_POSTCODE_FORMAT
@@ -27,7 +28,7 @@ ALL_CHECKS = [
         message="Duplikat adresu w okolicy.",
         message_fix="Adres można oznaczyć na dwa sposoby: na obszarze (dokładniejsze) albo na punkcie. "
                     "Aktualizując adres, należy się upewnić, czy w okolicy nie pozostały żadne duplikaty.",
-        overpass=".h->._",
+        overpass=".h",
         overpass_raw=True,
         post_fn=lambda o, i: o.query_duplicates(i)
     ),
@@ -52,6 +53,17 @@ ALL_CHECKS = [
         overpass_raw=True,
     ),
 
+    # TODO: more mistype checks
+    # PLACE_MISTYPE
+    Check(
+        priority=80,
+        message="Wartość addr:place zawiera błąd w pisowni.",
+        message_fix="Upewnij się, czy wielkość liter jest poprawna, oraz czy nigdzie nie ma dodatkowych znaków.",
+        overpass=".p",
+        overpass_raw=True,
+        post_fn=lambda o, i: o.query_place_not_in_area(i, mistype_mode=True)
+    ),
+
     # PLACE_WITH_STREET
     Check(
         priority=100,
@@ -69,7 +81,7 @@ ALL_CHECKS = [
         message="Nazwa ulicy nie istnieje w okolicy.",
         message_fix="Jeśli adres ma nazwę ulicy, upewnij się, że jest ona poprawna. "
                     "Jeśli nie, usuń addr:street, a nazwę miejscowości przekaż w addr:place.",
-        overpass=".s->._",
+        overpass=".s",
         overpass_raw=True,
         post_fn=lambda o, i: o.query_street_names(i)
     ),

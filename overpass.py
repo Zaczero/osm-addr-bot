@@ -1,4 +1,5 @@
 from itertools import chain
+from pprint import pprint
 
 from check import Check
 from config import SEARCH_BBOX, SEARCH_RELATION
@@ -28,6 +29,7 @@ def build_query(start_ts: int, end_ts: int, checks: list[Check], timeout: int) -
            f'relation(id:{SEARCH_RELATION});' \
            f'map_to_area->.a;' \
            f'nwr["addr:housenumber"](changed:"{start}","{end}")(area.a)->.h;' \
+           f'nwr["addr:place"](changed:"{start}","{end}")(area.a)->.p;' \
            f'nwr["addr:street"](changed:"{start}","{end}")(area.a)->.s;' \
            f'{body}'
 
@@ -57,15 +59,12 @@ def build_duplicates_query(issues: list[OverpassEntry], timeout: int) -> str:
 
 def build_place_not_in_area_query(issues: list[OverpassEntry], timeout: int) -> str:
     body = ''.join(
-        f'{i.element_type}(id:{i.element_id})->.a;'
-        f'(.a;.a>;.a>>;);'
-        f'is_in->.i;'
-        f'('
-        f'wr.i[!admin_level][name="{i.tags["addr:place"]}"];'
-        f'area.i[!admin_level][name="{i.tags["addr:place"]}"];'
-        f');'
+        f'{i.element_type}(id:{i.element_id});' +
+        ('' if i.element_type == 'node' else f'node({i.element_type[0]});') +
+        f'is_in;'
+        f'wr._[!admin_level][name];'
         f'out tags;'
-        f'.a out ids;'
+        f'out count;'
         for i in issues)
 
     return f'[out:json][timeout:{timeout}]{get_bbox()};{body}'
@@ -108,20 +107,26 @@ class Overpass:
 
         for check in checks:
             result[check] = check_list = []
+            return_size = 0
 
             for e in data_iter:
                 # check for end of section
                 if e['type'] == 'count':
-                    assert int(e['tags']['total']) == len(check_list)
+                    assert int(e['tags']['total']) == return_size
                     break
 
-                check_list.append(OverpassEntry(
+                return_size += 1
+
+                entry = OverpassEntry(
                     timestamp=e['timestamp'],
                     changeset_id=e['changeset'],
                     element_type=e['type'],
                     element_id=e['id'],
                     tags=e['tags']
-                ))
+                )
+
+                if self.state.start_ts <= entry.timestamp <= self.state.end_ts:
+                    check_list.append(entry)
             else:
                 raise
 
@@ -197,7 +202,7 @@ class Overpass:
 
         return result
 
-    def query_place_not_in_area(self, issues: list[OverpassEntry]) -> list[OverpassEntry]:
+    def query_place_not_in_area(self, issues: list[OverpassEntry], mistype_mode: bool) -> list[OverpassEntry]:
         timeout = 300
         query = build_place_not_in_area_query(issues, timeout=timeout)
 
@@ -209,17 +214,30 @@ class Overpass:
         result = []
 
         for issue in issues:
-            place_ok = False
+            is_in = set()
 
-            for element in data_iter:
+            for e in data_iter:
                 # check for end of section
-                if 'tags' not in element:
-                    assert element['type'] == issue.element_type and element['id'] == issue.element_id
+                if e['type'] == 'count':
+                    assert int(e['tags']['total']) == len(is_in)
                     break
 
-                place_ok = True
+                is_in.add(e['tags']['name'])
             else:
                 raise
+
+            place_ok = issue.tags['addr:place'] in is_in
+
+            # place_ok <=> addr:place is ( valid OR not mistype )
+            if not place_ok and mistype_mode:
+                addr_place_alt = issue.tags['addr:place'].strip().lower()
+                is_in_mistype = any(addr_place_alt == i.strip().lower() for i in is_in)
+                place_ok = not is_in_mistype
+
+                if not place_ok:
+                    print(is_in_mistype)
+                    pprint(issue.tags)
+                    pprint(is_in)
 
             if not place_ok:
                 result.append(issue)
