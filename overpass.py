@@ -19,14 +19,17 @@ def build_query(start_ts: int, end_ts: int, checks: list[Check], timeout: int) -
     start = format_timestamp(start_ts)
     end = format_timestamp(end_ts)
     body = ''.join(
-        f'nwr{c.overpass}(changed:"{start}","{end}")(area.a);'
+        (f'{c.overpass};' if c.overpass_raw else f'nwr{c.overpass}(changed:"{start}","{end}")(area.a);') +
         f'out meta;'
         f'out count;'
         for c in checks)
 
     return f'[out:json][timeout:{timeout}]{get_bbox()};' \
            f'relation(id:{SEARCH_RELATION});' \
-           f'map_to_area->.a;{body}'
+           f'map_to_area->.a;' \
+           f'nwr["addr:housenumber"](changed:"{start}","{end}")(area.a)->.h;' \
+           f'nwr["addr:street"](changed:"{start}","{end}")(area.a)->.s;' \
+           f'{body}'
 
 
 def build_partition_query(timestamp: int, issues: list[OverpassEntry], timeout: int) -> str:

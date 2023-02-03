@@ -27,7 +27,8 @@ ALL_CHECKS = [
         message="Duplikat adresu w okolicy.",
         message_fix="Adres można oznaczyć na dwa sposoby: na obszarze (dokładniejsze) albo na punkcie. "
                     "Aktualizując adres, należy się upewnić, czy w okolicy nie pozostały żadne duplikaty.",
-        overpass="['addr:housenumber']",
+        overpass=".h->._",
+        overpass_raw=True,
         post_fn=lambda o, i: o.query_duplicates(i)
     ),
 
@@ -37,7 +38,8 @@ ALL_CHECKS = [
         message="Adres jest niekompletny, brakuje informacji o miejscowości.",
         message_fix="Jeśli adres ma nazwę ulicy, zastosuj kombinację addr:city + addr:street. "
                     "Jeśli nie, przekaż nazwę miejscowości w addr:place.",
-        overpass="['addr:housenumber'][!'addr:city'][!'addr:place']"
+        overpass="nwr.h[!'addr:city'][!'addr:place']",
+        overpass_raw=True,
     ),
 
     # NUMBER_WITHOUT_STREET
@@ -46,7 +48,8 @@ ALL_CHECKS = [
         message="Adres jest niekompletny, brakuje informacji o nazwie ulicy.",
         message_fix="Jeśli adres ma nazwę ulicy, dodaj ją w addr:street. "
                     "Jeśli nie, zamień addr:city na addr:place - tak oznaczamy adresy bez ulic.",
-        overpass="['addr:housenumber']['addr:city'][!'addr:street']"
+        overpass="nwr.h['addr:city'][!'addr:street']",
+        overpass_raw=True,
     ),
 
     # PLACE_WITH_STREET
@@ -56,7 +59,8 @@ ALL_CHECKS = [
                 "Kombinacja z addr:street (który definiuje nazwę ulicy) jest błędna.",
         message_fix="Jeśli adres ma nazwę ulicy, zamień addr:place na addr:city. "
                     "Jeśli nie, usuń addr:street.",
-        overpass="['addr:place']['addr:street']"
+        overpass="nwr.s['addr:place']",
+        overpass_raw=True,
     ),
 
     # UNKNOWN_STREET_NAME
@@ -65,7 +69,8 @@ ALL_CHECKS = [
         message="Nazwa ulicy nie istnieje w okolicy.",
         message_fix="Jeśli adres ma nazwę ulicy, upewnij się, że jest ona poprawna. "
                     "Jeśli nie, usuń addr:street, a nazwę miejscowości przekaż w addr:place.",
-        overpass="['addr:street']",
+        overpass=".s->._",
+        overpass_raw=True,
         post_fn=lambda o, i: o.query_street_names(i)
     ),
 
