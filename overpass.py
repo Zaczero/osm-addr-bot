@@ -51,7 +51,7 @@ def build_duplicates_query(issues: list[OverpassEntry], timeout: int) -> str:
         f'{i.element_type}["addr:housenumber"](around.a:0);'
         f');'
         f'out tags;'
-        f'.a out ids;'
+        f'out count;'
         for i in issues)
 
     return f'[out:json][timeout:{timeout}]{get_bbox()};{body}'
@@ -62,7 +62,7 @@ def build_place_not_in_area_query(issues: list[OverpassEntry], timeout: int) -> 
         f'{i.element_type}(id:{i.element_id});' +
         ('' if i.element_type == 'node' else f'node({i.element_type[0]});') +
         f'is_in;'
-        f'wr._[!admin_level][name];'
+        f'wr._[name];'
         f'out tags;'
         f'out count;'
         for i in issues)
@@ -72,10 +72,10 @@ def build_place_not_in_area_query(issues: list[OverpassEntry], timeout: int) -> 
 
 def build_street_names_query(issues: list[OverpassEntry], timeout: int) -> str:
     body = ''.join(
-        f'{i.element_type}(id:{i.element_id})->.a;'
-        f'wr[highway][name="{i.tags["addr:street"]}"](around.a:500);'
+        f'{i.element_type}(id:{i.element_id});'
+        f'wr[highway][name="{i.tags["addr:street"]}"](around:500);'
         f'out tags;'
-        f'.a out ids;'
+        f'out count;'
         for i in issues)
 
     return f'[out:json][timeout:{timeout}]{get_bbox()};{body}'
@@ -106,8 +106,8 @@ class Overpass:
         result = {}
 
         for check in checks:
-            result[check] = check_list = []
             return_size = 0
+            result[check] = check_list = []
 
             for e in data_iter:
                 # check for end of section
@@ -179,18 +179,20 @@ class Overpass:
         result = []
 
         for issue in valid_issues:
+            return_size = 0
             duplicated = False
 
-            for element in data_iter:
-                # check for end of section
-                if 'tags' not in element:
-                    assert element['type'] == issue.element_type and element['id'] == issue.element_id
+            for e in data_iter:
+                if e['type'] == 'count':
+                    assert int(e['tags']['total']) == return_size
                     break
 
-                if not all(check_equal_tags(element['tags'], issue.tags, t) for t in equal_tags):
+                return_size += 1
+
+                if not all(check_equal_tags(e['tags'], issue.tags, t) for t in equal_tags):
                     continue
 
-                if not check_whitelist(element['tags']):
+                if not check_whitelist(e['tags']):
                     continue
 
                 duplicated = True
@@ -256,14 +258,16 @@ class Overpass:
         result = []
 
         for issue in issues:
+            return_size = 0
             street_ok = False
 
-            for element in data_iter:
+            for e in data_iter:
                 # check for end of section
-                if 'tags' not in element:
-                    assert element['type'] == issue.element_type and element['id'] == issue.element_id
+                if e['type'] == 'count':
+                    assert int(e['tags']['total']) == return_size
                     break
 
+                return_size += 1
                 street_ok = True
             else:
                 raise
