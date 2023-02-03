@@ -5,7 +5,7 @@ from check import Check
 from config import SEARCH_BBOX, SEARCH_RELATION
 from overpass_entry import OverpassEntry
 from state import State
-from utils import get_http_client, format_timestamp, parse_timestamp
+from utils import get_http_client, format_timestamp, parse_timestamp, escape_overpass
 
 
 def get_bbox() -> str:
@@ -62,7 +62,7 @@ def build_place_not_in_area_query(issues: list[OverpassEntry], timeout: int) -> 
         f'{i.element_type}(id:{i.element_id});' +
         ('' if i.element_type == 'node' else f'node({i.element_type[0]});') +
         f'is_in;'
-        f'wr._[!admin_level][name="{i.tags["addr:place"]}"];'
+        f'wr._[!admin_level][name="{escape_overpass(i.tags["addr:place"])}"];'
         f'out tags;'
         f'out count;'
         for i in issues)
@@ -86,7 +86,7 @@ def build_place_mistype_query(issues: list[OverpassEntry], timeout: int) -> str:
 def build_street_names_query(issues: list[OverpassEntry], timeout: int) -> str:
     body = ''.join(
         f'{i.element_type}(id:{i.element_id});'
-        f'wr[highway][name="{i.tags["addr:street"]}"](around:500);'
+        f'wr[highway][name="{escape_overpass(i.tags["addr:street"])}"](around:500);'
         f'out tags;'
         f'out count;'
         for i in issues)

@@ -26,3 +26,13 @@ def parse_timestamp(ts: str) -> int:
 def format_timestamp(ts: int) -> str:
     date_format = '%Y-%m-%dT%H:%M:%SZ'
     return datetime.utcfromtimestamp(ts).strftime(date_format)
+
+
+escape_table = str.maketrans({
+    '"': '\\"',
+    '\\': '\\\\'
+})
+
+
+def escape_overpass(unsafe: str) -> str:
+    return unsafe.translate(escape_table)
