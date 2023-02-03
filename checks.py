@@ -51,7 +51,7 @@ ALL_CHECKS = [
         message="Adres jest niekompletny, brakuje informacji o nazwie ulicy.",
         message_fix="Jeśli adres ma nazwę ulicy, dodaj ją w addr:street. "
                     "Jeśli nie, zamień addr:city na addr:place - tak oznaczamy adresy bez ulic.",
-        overpass="nwr.h['addr:city'][!'addr:street']",
+        overpass="nwr.h['addr:city'][!'addr:place'][!'addr:street']",
         overpass_raw=True,
     ),
 
