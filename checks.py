@@ -2,6 +2,8 @@ from check import Check
 
 # noinspection SpellCheckingInspection
 ALL_CHECKS = [
+    # TODO: query all and perform offline validation
+    # TODO: more mistype checks
 
     # BAD_CITY_WITH_PLACE
     Check(
@@ -53,7 +55,6 @@ ALL_CHECKS = [
         overpass_raw=True,
     ),
 
-    # TODO: more mistype checks
     # PLACE_MISTYPE
     Check(
         priority=80,
