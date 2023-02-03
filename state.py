@@ -52,7 +52,8 @@ class State:
 
             for check_identifier, check_issues_d in changeset_issues.items():
                 check = next(c for c in ALL_CHECKS if c.identifier == check_identifier)
-                check_issues = (OverpassEntry(**d) for d in check_issues_d)
+                check_issues = [OverpassEntry(**d) for d in check_issues_d]
+                assert all(i.timestamp <= self.start_ts for i in check_issues)
                 issues[changeset_id][check].extend(check_issues)
 
         merged = len(self._rescheduled_issues)
