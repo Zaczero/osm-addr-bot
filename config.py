@@ -4,6 +4,7 @@ from pathlib import Path
 OSM_USERNAME = os.getenv('OSM_USERNAME')
 OSM_PASSWORD = os.getenv('OSM_PASSWORD')
 DRY_RUN = os.getenv('DRY_RUN', None) == '1'
+IGNORE_ALREADY_DISCUSSED = os.getenv('IGNORE_ALREADY_DISCUSSED', None) == '1'
 
 USER_AGENT = f'osm-addr-bot (+https://github.com/Zaczero/osm-addr-bot)'
 

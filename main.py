@@ -1,13 +1,10 @@
-import sys
 import time
 from collections import defaultdict
 from datetime import datetime
 
-from tqdm import tqdm
-
 from check import Check
 from checks import ALL_CHECKS
-from config import NEW_USER_THRESHOLD, PRO_USER_THRESHOLD, DRY_RUN, APP_BLACKLIST
+from config import NEW_USER_THRESHOLD, PRO_USER_THRESHOLD, DRY_RUN, APP_BLACKLIST, IGNORE_ALREADY_DISCUSSED
 from osmapi import OsmApi
 from overpass import Overpass
 from overpass_entry import OverpassEntry
@@ -43,8 +40,12 @@ def should_discuss(changeset: dict) -> bool:
 
         # noinspection SpellCheckingInspection
         if any(word in discussion['text'] for word in ('addr', 'adres')):
-            print(f'💬 Skipped {changeset_id}: Already discussed')
-            return False
+            if not IGNORE_ALREADY_DISCUSSED:
+                print(f'💬 Skipped {changeset_id}: Already discussed')
+                return False
+            else:
+                print(f'💬 Skipped {changeset_id}: Already discussed [IGNORED]')
+                break
 
     return True
 
