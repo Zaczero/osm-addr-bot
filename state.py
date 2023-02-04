@@ -70,7 +70,7 @@ class State:
                 .setdefault(check.identifier, []) \
                 .extend(asdict(i) for i in check_issues)
 
-    def update_state(self):
+    def write_state(self):
         with open(STATE_PATH, 'w') as f:
             json.dump({
                 'state': self.end_ts,

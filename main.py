@@ -195,7 +195,7 @@ def main():
                 print(f'✅ Notified https://www.openstreetmap.org/changeset/{changeset_id} [DRY_RUN]')
 
         if not DRY_RUN:
-            s.update_state()
+            s.write_state()
 
     print(f'🏁 Finished in {time.perf_counter() - time_start:.1F} sec')
     print()
