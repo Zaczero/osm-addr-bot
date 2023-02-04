@@ -181,11 +181,11 @@ class Overpass:
 
         data = r.json()['elements']
         data_iter = iter(data)
-        changeset_result = set()
+        changeset_result = set(valid_issues)
 
         for issue in valid_issues:
             return_size = 0
-            ref_duplicates = {issue}  # add to prevent overwrite
+            ref_duplicates = []
 
             for e in data_iter:
                 if e['type'] == 'count':
@@ -200,7 +200,7 @@ class Overpass:
                 if not check_whitelist(e['tags']):
                     continue
 
-                ref_duplicates.add(OverpassEntry(
+                ref_duplicates.append(OverpassEntry(
                     timestamp=issue.timestamp,
                     changeset_id=issue.changeset_id,
                     element_type=e['type'],
@@ -210,8 +210,10 @@ class Overpass:
             else:
                 raise
 
-            if len(ref_duplicates) > 1:
+            if ref_duplicates:
                 changeset_result.update(ref_duplicates)
+            else:
+                changeset_result.remove(issue)
 
         return list(changeset_result)
 
