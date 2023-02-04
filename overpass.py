@@ -193,7 +193,7 @@ class Overpass:
 
         for issue in valid_issues:
             return_size = 0
-            duplicated = False
+            ref_duplicates = {issue}  # add to prevent overwrite
 
             for e in data_iter:
                 if e['type'] == 'count':
@@ -208,12 +208,18 @@ class Overpass:
                 if not check_whitelist(e['tags']):
                     continue
 
-                duplicated = True
+                ref_duplicates.add(OverpassEntry(
+                    timestamp=issue.timestamp,
+                    changeset_id=issue.changeset_id,
+                    element_type=e['type'],
+                    element_id=e['id'],
+                    tags=e['tags']
+                ))
             else:
                 raise
 
-            if duplicated:
-                result.append(issue)
+            if len(ref_duplicates) > 1:
+                result.extend(ref_duplicates)
 
         return result
 
