@@ -130,6 +130,7 @@ def main():
 
     with State() as s:
         overpass = Overpass(s)
+        s.configure_end_ts(overpass.get_timestamp_osm_base() - 1)
 
         print(f'Time range: {datetime.utcfromtimestamp(s.start_ts)} - {datetime.utcfromtimestamp(s.end_ts)}')
         print(f'Querying issues…')

@@ -98,6 +98,16 @@ class Overpass:
         self.base_url = 'https://overpass.monicz.dev/api/interpreter'
         self.c = get_http_client()
 
+    def get_timestamp_osm_base(self) -> int:
+        timeout = 30
+        query = f'[out:json][timeout:{timeout}];'
+
+        r = self.c.post(self.base_url, data={'data': query}, timeout=timeout)
+        r.raise_for_status()
+
+        data = r.json()
+        return parse_timestamp(data['osm3s']['timestamp_osm_base'])
+
     def query(self, checks: list[Check]) -> dict[Check, list[OverpassEntry]] | bool:
         timeout = 300
         query = build_query(self.state.start_ts, self.state.end_ts, timeout=timeout)
@@ -105,13 +115,8 @@ class Overpass:
         r = self.c.post(self.base_url, data={'data': query}, timeout=timeout)
         r.raise_for_status()
 
-        data = r.json()
-        overpass_ts = parse_timestamp(data['osm3s']['timestamp_osm_base'])
-
-        if self.state.end_ts >= overpass_ts:
-            return False
-
-        data = (e for e in data['elements'] if any(t.startswith('addr:') for t in e.get('tags', [])))
+        data = r.json()['elements']
+        data = (e for e in data if any(t.startswith('addr:') for t in e.get('tags', [])))
         result = defaultdict(list)
 
         for e in data:

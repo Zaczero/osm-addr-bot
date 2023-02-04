@@ -4,7 +4,7 @@ from time import time
 
 from check import Check
 from checks import ALL_CHECKS
-from config import STATE_PATH, STATE_MIN_DELAY, STATE_MAX_BACKLOG, STATE_MAX_DIFF
+from config import STATE_PATH, STATE_MAX_BACKLOG, STATE_MAX_DIFF
 from overpass_entry import OverpassEntry
 
 
@@ -34,17 +34,19 @@ class State:
         now = int(time())
 
         self.start_ts = max(now - STATE_MAX_BACKLOG, state)
-        self.end_ts = now - STATE_MIN_DELAY
-
-        if self.end_ts - self.start_ts > STATE_MAX_DIFF:
-            self.end_ts = self.start_ts + STATE_MAX_DIFF
-
+        self.end_ts = self.start_ts
         self._rescheduled_issues = data['rescheduled_issues']
 
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
+
+    def configure_end_ts(self, value: int) -> None:
+        self.end_ts = value
+
+        if self.end_ts - self.start_ts > STATE_MAX_DIFF:
+            self.end_ts = self.start_ts + STATE_MAX_DIFF
 
     def merge_rescheduled_issues(self, issues: dict[int, dict[Check, list[OverpassEntry]]]) -> int:
         for changeset_id, changeset_issues in self._rescheduled_issues.items():
