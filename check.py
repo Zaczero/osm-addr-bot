@@ -8,6 +8,5 @@ class Check:
     priority: int
     message: str
     message_fix: str
-    overpass: str
-    overpass_raw: bool = False
+    pre_fn: Callable[[dict[str, str]], bool]
     post_fn: Optional[Callable[[Any, list], list]] = None

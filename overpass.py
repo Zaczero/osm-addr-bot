@@ -1,3 +1,4 @@
+from collections import defaultdict
 from itertools import chain
 from pprint import pprint
 
@@ -5,7 +6,7 @@ from check import Check
 from config import SEARCH_BBOX, SEARCH_RELATION
 from overpass_entry import OverpassEntry
 from state import State
-from utils import get_http_client, format_timestamp, parse_timestamp, escape_overpass
+from utils import get_http_client, format_timestamp, parse_timestamp, escape_overpass, normalize
 
 
 def get_bbox() -> str:
@@ -15,23 +16,16 @@ def get_bbox() -> str:
     return f'[bbox:{min_lat},{min_lon},{max_lat},{max_lon}]'
 
 
-def build_query(start_ts: int, end_ts: int, checks: list[Check], timeout: int) -> str:
+def build_query(start_ts: int, end_ts: int, timeout: int) -> str:
     assert start_ts < end_ts
     start = format_timestamp(start_ts)
     end = format_timestamp(end_ts)
-    body = ''.join(
-        (f'{c.overpass};' if c.overpass_raw else f'nwr{c.overpass}(changed:"{start}","{end}")(area.a);') +
-        f'out meta;'
-        f'out count;'
-        for c in checks)
 
     return f'[out:json][timeout:{timeout}]{get_bbox()};' \
            f'relation(id:{SEARCH_RELATION});' \
-           f'map_to_area->.a;' \
-           f'nwr["addr:housenumber"](changed:"{start}","{end}")(area.a)->.h;' \
-           f'nwr["addr:place"](changed:"{start}","{end}")(area.a)->.p;' \
-           f'nwr["addr:street"](changed:"{start}","{end}")(area.a)->.s;' \
-           f'{body}'
+           f'map_to_area;' \
+           f'nwr(changed:"{start}","{end}")(area);' \
+           f'out meta;'
 
 
 def build_partition_query(timestamp: int, issues: list[OverpassEntry], timeout: int) -> str:
@@ -61,8 +55,11 @@ def build_place_not_in_area_query(issues: list[OverpassEntry], timeout: int) -> 
     body = ''.join(
         f'{i.element_type}(id:{i.element_id});' +
         ('' if i.element_type == 'node' else f'node({i.element_type[0]});') +
-        f'is_in;'
-        f'wr._[!admin_level][name="{escape_overpass(i.tags["addr:place"])}"];'
+        f'is_in->.i;'
+        f'('
+        f'wr.i[!admin_level][name="{escape_overpass(i.tags["addr:place"])}"];'
+        f'area.i[!admin_level][name="{escape_overpass(i.tags["addr:place"])}"];'
+        f');'
         f'out tags;'
         f'out count;'
         for i in issues)
@@ -103,7 +100,7 @@ class Overpass:
 
     def query(self, checks: list[Check]) -> dict[Check, list[OverpassEntry]] | bool:
         timeout = 300
-        query = build_query(self.state.start_ts, self.state.end_ts, checks, timeout=timeout)
+        query = build_query(self.state.start_ts, self.state.end_ts, timeout=timeout)
 
         r = self.c.post(self.base_url, data={'data': query}, timeout=timeout)
         r.raise_for_status()
@@ -114,34 +111,22 @@ class Overpass:
         if self.state.end_ts >= overpass_ts:
             return False
 
-        data = r.json()['elements']
-        data_iter = iter(data)
-        result = {}
+        data = (e for e in data['elements'] if any(t.startswith('addr:') for t in e.get('tags', [])))
+        result = defaultdict(list)
 
-        for check in checks:
-            return_size = 0
-            result[check] = check_list = []
+        for e in data:
+            entry = OverpassEntry(
+                timestamp=e['timestamp'],
+                changeset_id=e['changeset'],
+                element_type=e['type'],
+                element_id=e['id'],
+                tags=e['tags']
+            )
 
-            for e in data_iter:
-                # check for end of section
-                if e['type'] == 'count':
-                    assert int(e['tags']['total']) == return_size
-                    break
-
-                return_size += 1
-
-                entry = OverpassEntry(
-                    timestamp=e['timestamp'],
-                    changeset_id=e['changeset'],
-                    element_type=e['type'],
-                    element_id=e['id'],
-                    tags=e['tags']
-                )
-
-                if self.state.start_ts <= entry.timestamp <= self.state.end_ts:
-                    check_list.append(entry)
-            else:
-                raise
+            if self.state.start_ts <= entry.timestamp <= self.state.end_ts:
+                for check in checks:
+                    if check.pre_fn(entry.tags):
+                        result[check].append(entry)
 
         return result
 
@@ -279,10 +264,9 @@ class Overpass:
                 raise
 
             if issue.tags['addr:place'] not in is_in:
-                addr_place_alt = issue.tags['addr:place'].strip().lower()
-                is_mistype = any(addr_place_alt == i.strip().lower() for i in is_in)
+                addr_place_norm = normalize(issue.tags['addr:place'])
 
-                if is_mistype:
+                if any(addr_place_norm == normalize(i) for i in is_in):
                     result.append(issue)
 
         return result

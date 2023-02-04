@@ -1,4 +1,5 @@
 import functools
+import re
 from datetime import datetime, timezone
 
 from requests import Session
@@ -28,11 +29,18 @@ def format_timestamp(ts: int) -> str:
     return datetime.utcfromtimestamp(ts).strftime(date_format)
 
 
-escape_table = str.maketrans({
+ESCAPE_TABLE = str.maketrans({
     '"': '\\"',
     '\\': '\\\\'
 })
 
 
 def escape_overpass(unsafe: str) -> str:
-    return unsafe.translate(escape_table)
+    return unsafe.translate(ESCAPE_TABLE)
+
+
+MULTIPLE_SPACE_RE = re.compile(r'\s{2,}')
+
+
+def normalize(a: str) -> str:
+    return MULTIPLE_SPACE_RE.sub(' ', a.strip().lower())

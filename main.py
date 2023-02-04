@@ -56,7 +56,7 @@ def filter_post_fn(overpass: Overpass, issues: dict[Check, list[OverpassEntry]])
                 issues.pop(check)
 
 
-def filter_priority(issues: dict[Check, list[OverpassEntry]]) -> None:
+def filter_priority(issues: dict[Check, list[OverpassEntry]], *, consider_post_fn: bool) -> None:
     max_priorities = {}
 
     for check, check_issues in sorted(issues.items(), key=lambda t: t[0].priority, reverse=True):
@@ -64,7 +64,10 @@ def filter_priority(issues: dict[Check, list[OverpassEntry]]) -> None:
 
         for check_issue in check_issues:
             if max_priorities.get(check_issue, 0) <= check.priority:
-                max_priorities[check_issue] = check.priority
+
+                if not consider_post_fn or check.post_fn is None:
+                    max_priorities[check_issue] = check.priority
+
                 new_issues.append(check_issue)
 
         if new_issues:
@@ -161,18 +164,19 @@ def main():
             if not should_discuss(changeset):
                 continue
 
+            filter_priority(changeset_issues, consider_post_fn=True)
             filter_post_fn(overpass, changeset_issues)
 
             if not changeset_issues:
                 print(f'🆗 Skipped {changeset_id}: No issues')
                 continue
 
-            # this must be done after post_fn; issues may change because of it
+            # this must be done after post_fn - issues may change because of it
             if not overpass.is_editing_address(changeset_issues):
                 print(f'🏡 Skipped {changeset_id}: Not editing addresses')
                 continue
 
-            filter_priority(changeset_issues)
+            filter_priority(changeset_issues, consider_post_fn=False)
 
             user = osm.get_user(changeset['uid'])
 

@@ -36,7 +36,7 @@ if not STATE_PATH.exists():
 
 STATE_MAX_BACKLOG = 3600 * 24 * 3  # 3 days
 STATE_MAX_DIFF = 3600 * 8  # 8 hours
-STATE_MIN_DELAY = 60 * 5  # 5 minutes
+STATE_MIN_DELAY = 60 * 4  # 4 minutes
 
 NEW_USER_THRESHOLD = 12
 PRO_USER_THRESHOLD = 600

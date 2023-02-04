@@ -9,7 +9,7 @@ class OverpassEntry:
     changeset_id: int
     element_type: str
     element_id: int
-    tags: dict
+    tags: dict[str, str]
     _hash: int = 0
 
     # noinspection PyTypeChecker
