@@ -1,6 +1,5 @@
 from collections import defaultdict
 from itertools import chain
-from pprint import pprint
 
 from check import Check
 from config import SEARCH_BBOX, SEARCH_RELATION
@@ -109,6 +108,9 @@ class Overpass:
         return parse_timestamp(data['osm3s']['timestamp_osm_base'])
 
     def query(self, checks: list[Check]) -> dict[Check, list[OverpassEntry]] | bool:
+        if self.state.start_ts == self.state.end_ts:
+            return False
+
         timeout = 300
         query = build_query(self.state.start_ts, self.state.end_ts, timeout=timeout)
 
