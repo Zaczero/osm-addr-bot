@@ -181,7 +181,7 @@ class Overpass:
 
         data = r.json()['elements']
         data_iter = iter(data)
-        result = []
+        changeset_result = set()
 
         for issue in valid_issues:
             return_size = 0
@@ -211,9 +211,9 @@ class Overpass:
                 raise
 
             if len(ref_duplicates) > 1:
-                result.extend(ref_duplicates)
+                changeset_result.update(ref_duplicates)
 
-        return result
+        return list(changeset_result)
 
     def query_place_not_in_area(self, issues: list[OverpassEntry]) -> list[OverpassEntry]:
         timeout = 300
