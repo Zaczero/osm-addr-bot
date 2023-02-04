@@ -1,6 +1,8 @@
+import fcntl
 import json
 from dataclasses import asdict
 from time import time
+from typing import IO
 
 from check import Check
 from checks import ALL_CHECKS
@@ -12,6 +14,7 @@ class State:
     start_ts: int
     end_ts: int
     _rescheduled_issues: dict[int, dict[str, list[dict]]]
+    _fd: IO
 
     def __enter__(self):
         if not STATE_PATH.exists():
@@ -19,16 +22,18 @@ class State:
                 f.write('0')
 
         # open for rw to ensure permissions
-        with open(STATE_PATH, 'r+') as f:
-            try:
-                data = json.load(f)
-                assert isinstance(data, dict)
-            except Exception:
-                f.seek(0)
-                data = {
-                    'state': int(f.read().strip()),
-                    'rescheduled_issues': {}
-                }
+        self._fd = open(STATE_PATH, 'r+')
+        fcntl.flock(self._fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+        try:
+            data = json.load(self._fd)
+            assert isinstance(data, dict)
+        except Exception:
+            self._fd.seek(0)
+            data = {
+                'state': int(self._fd.read().strip()),
+                'rescheduled_issues': {}
+            }
 
         state = data['state']
         now = int(time())
@@ -40,7 +45,7 @@ class State:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
+        self._fd.close()
 
     def configure_end_ts(self, value: int) -> None:
         self.end_ts = value
@@ -71,8 +76,10 @@ class State:
                 .extend(asdict(i) for i in check_issues)
 
     def write_state(self):
-        with open(STATE_PATH, 'w') as f:
-            json.dump({
-                'state': self.end_ts,
-                'rescheduled_issues': self._rescheduled_issues
-            }, f, indent=2)
+        self._fd.seek(0)
+        self._fd.truncate(0)
+
+        json.dump({
+            'state': self.end_ts,
+            'rescheduled_issues': self._rescheduled_issues
+        }, self._fd, indent=2)
