@@ -3,6 +3,7 @@ from itertools import chain
 
 from check import Check
 from config import SEARCH_BBOX, SEARCH_RELATION
+from duplicate_search import check_whitelist, duplicate_search
 from overpass_entry import OverpassEntry
 from state import State
 from utils import get_http_client, format_timestamp, parse_timestamp, escape_overpass, normalize
@@ -40,10 +41,10 @@ def build_duplicates_query(issues: list[OverpassEntry], timeout: int) -> str:
     body = ''.join(
         f'{i.element_type}(id:{i.element_id})->.a;'
         f'('
-        f'nwr["addr:housenumber"](around.a:100)(if: t["addr:housenumber"] == "{escape_overpass(i.tags["addr:housenumber"])}"); - '
-        f'{i.element_type}["addr:housenumber"](around.a:0);'
+        f'node["addr:housenumber"](around.a:100);' +
+        (f'wr[building](around.a:100);' if i.element_type != 'node' else '') +
         f');'
-        f'out tags;'
+        f'out body;'
         f'out count;'
         for i in issues)
 
@@ -127,7 +128,8 @@ class Overpass:
                 changeset_id=e['changeset'],
                 element_type=e['type'],
                 element_id=e['id'],
-                tags=e['tags']
+                tags=e['tags'],
+                nodes=e.get('nodes', [])
             )
 
             if self.state.start_ts <= entry.timestamp <= self.state.end_ts:
@@ -137,78 +139,50 @@ class Overpass:
 
         return result
 
-    def query_duplicates(self, issues: list[OverpassEntry]) -> list[OverpassEntry]:
-        whitelist_tags = (
-            'addr:',
-            'building',
-            'capacity',
-            'fixme',
-            'height',
-            'layer',
-            'note',
-            'source'
-        )
+    def query_duplicates(self, raw_issues: list[OverpassEntry]) -> list[OverpassEntry]:
+        issues = [i for i in raw_issues if check_whitelist(i.tags)]
 
-        equal_tags = (
-            'addr:city',
-            'addr:place',
-            'addr:street',
-            # 'addr:housenumber' - checked in query
-        )
-
-        def check_whitelist(tags: dict) -> bool:
-            return all(
-                any(
-                    t.startswith(w)
-                    for w in whitelist_tags
-                )
-                for t in tags
-            )
-
-        def check_equal_tags(left: dict, right: dict, key: str) -> bool:
-            return left.get(key, None) == right.get(key, None)
-
-        valid_issues = [i for i in issues if check_whitelist(i.tags)]
-
-        if not valid_issues:
+        if not issues:
             return []
 
         timeout = 300
-        query = build_duplicates_query(valid_issues, timeout=timeout)
+        query = build_duplicates_query(issues, timeout=timeout)
 
         r = self.c.post(self.base_url, data={'data': query}, timeout=timeout)
         r.raise_for_status()
 
         data = r.json()['elements']
         data_iter = iter(data)
-        result = set(valid_issues)
+        result = set(issues)
 
-        for issue in valid_issues:
-            return_size = 0
-            ref_duplicates = []
+        for issue in issues:
+            ref_n = []
+            ref_wr = []
 
             for e in data_iter:
                 if e['type'] == 'count':
-                    assert int(e['tags']['total']) == return_size
+                    assert int(e['tags']['total']) == len(ref_n) + len(ref_wr)
                     break
 
-                return_size += 1
-
-                if not all(check_equal_tags(e['tags'], issue.tags, t) for t in equal_tags):
-                    continue
-
-                if not check_whitelist(e['tags']):
-                    continue
-
-                ref_duplicates.append(OverpassEntry(
+                entry = OverpassEntry(
+                    # treat as the same changeset for simpler code
                     timestamp=issue.timestamp,
                     changeset_id=issue.changeset_id,
                     element_type=e['type'],
                     element_id=e['id'],
-                    tags=e['tags']
-                ))
+                    tags=e['tags'],
+                    nodes=e.get('nodes', [])
+                )
+
+                if e['type'] == 'node':
+                    ref_n.append(entry)
+                else:
+                    ref_wr.append(entry)
+
             else:
                 raise
+
+            ref_duplicates = duplicate_search(issue, ref_n, ref_wr)
 
             if ref_duplicates:
                 result.update(ref_duplicates)
