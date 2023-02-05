@@ -13,6 +13,7 @@ WHITELIST_TAGS = (
     'fixme',
     'height',
     'layer',
+    'name',
     'note',
     'proposed',
     'roof',
