@@ -8,18 +8,24 @@ WHITELIST_TAGS = (
     'addr:',
     'building',
     'capacity',
+    'check_date',
+    'construction',
     'fixme',
     'height',
     'layer',
     'note',
-    'source'
+    'proposed',
+    'roof',
+    'source',
+    'start_date'
 )
 
 EQUAL_TAGS = (
     'addr:city',
+    'addr:housenumber',
     'addr:place',
     'addr:street',
-    'addr:housenumber'
+    'addr:unit'
 )
 
 
