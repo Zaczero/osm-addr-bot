@@ -53,14 +53,14 @@ def duplicate_search(entry: OverpassEntry,
 
     result = [
         e for e in ref_n
-        if (e.element_id != entry.element_id or e.element_type != entry.element_type)
+        if e != entry
            and check_whitelist(e.tags)
            and check_equal_tags(e, entry)
     ]
 
     wr_search_target = [
         e for e in ref_wr
-        if (e.element_id != entry.element_id or e.element_type != entry.element_type)
+        if e != entry
            and check_whitelist(e.tags)
            and check_equal_tags(e, entry)
     ]
@@ -105,6 +105,7 @@ def duplicate_search(entry: OverpassEntry,
 
             visited.add(e)
 
+            # optionally, don't jump over elements with an address
             if DUPLICATE_BFS_EXCLUDE_ADDR and dist > 0 and 'addr:housenumber' in e.tags:
                 continue
 
