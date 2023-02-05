@@ -49,7 +49,7 @@ def should_discuss(changeset: dict) -> bool:
 def filter_should_not_discuss(osm: OsmApi, issues: dict[Check, list[OverpassEntry]]) -> None:
     changeset_ids = set(i.changeset_id for ii in issues.values() for i in ii)
 
-    print(f'[2/?] Filtering {len(changeset_ids)} changeset{"s" if len(changeset_ids) > 1 else ""}…')
+    print(f'[2/?] Filtering {len(changeset_ids)} changeset{"" if len(changeset_ids) == 1 else "s"}…')
 
     for changeset_id in list(changeset_ids):
         changeset = osm.get_changeset(changeset_id)
