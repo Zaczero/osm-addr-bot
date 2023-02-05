@@ -19,7 +19,7 @@ class OverpassEntry:
 
         self.changeset_id = int(self.changeset_id)
         self.element_id = int(self.element_id)
-        self._hash = hash((self.element_type, self.element_id))
+        self._hash = hash((self.element_type, self.element_id))  # assume 1 element = 1 changeset id
 
     def __hash__(self):
         return self._hash

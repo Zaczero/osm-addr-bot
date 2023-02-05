@@ -46,14 +46,37 @@ def should_discuss(changeset: dict) -> bool:
     return True
 
 
-def filter_post_fn(overpass: Overpass, issues: dict[Check, list[OverpassEntry]]) -> None:
+def filter_should_not_discuss(osm: OsmApi, issues: dict[Check, list[OverpassEntry]]) -> None:
+    changeset_ids = set(i.changeset_id for ii in issues.values() for i in ii)
+
+    print(f'[2/?] Filtering {len(changeset_ids)} changeset{"s" if len(changeset_ids) > 1 else ""}…')
+
+    for changeset_id in list(changeset_ids):
+        changeset = osm.get_changeset(changeset_id)
+
+        if not should_discuss(changeset):
+            changeset_ids.remove(changeset_id)
+
     for check, check_issues in list(issues.items()):
-        if check.post_fn:
-            new_issues = check.post_fn(overpass, check_issues)
-            if new_issues:
-                issues[check] = new_issues
-            else:
-                issues.pop(check)
+        new_issues = [i for i in check_issues if i.changeset_id in changeset_ids]
+
+        if new_issues:
+            issues[check] = new_issues
+        else:
+            issues.pop(check)
+
+
+def filter_post_fn(overpass: Overpass, issues: dict[Check, list[OverpassEntry]]) -> None:
+    check_post = [(c, i) for c, i in issues.items() if c.post_fn]
+
+    for i, (check, check_issues) in enumerate(check_post):
+        print(f'[{3 + i}/{2 + len(check_post)}] Filtering {len(check_issues)} × {check.identifier}…')
+        new_issues = check.post_fn(overpass, check_issues)
+
+        if new_issues:
+            issues[check] = new_issues
+        else:
+            issues.pop(check)
 
 
 def filter_priority(issues: dict[Check, list[OverpassEntry]], *, consider_post_fn: bool) -> None:
@@ -133,12 +156,16 @@ def main():
         s.configure_end_ts(overpass.get_timestamp_osm_base() - 1)
 
         print(f'Time range: {datetime.utcfromtimestamp(s.start_ts)} - {datetime.utcfromtimestamp(s.end_ts)}')
-        print(f'Querying issues…')
+        print(f'[1/?] Querying issues…')
         queried = overpass.query(ALL_CHECKS)
 
         if queried is False:
             print('🕒️ Overpass is updating, try again shortly')
             return
+
+        filter_should_not_discuss(osm, queried)
+        filter_priority(queried, consider_post_fn=True)
+        filter_post_fn(overpass, queried)
 
         issues: dict[int, dict[Check, list[OverpassEntry]]] = defaultdict(lambda: defaultdict(list))
 
@@ -162,16 +189,6 @@ def main():
                 s.reschedule_issues(changeset_id, changeset_issues)
                 continue
 
-            if not should_discuss(changeset):
-                continue
-
-            filter_priority(changeset_issues, consider_post_fn=True)
-            filter_post_fn(overpass, changeset_issues)
-
-            if not changeset_issues:
-                print(f'🆗 Skipped {changeset_id}: No issues')
-                continue
-
             # this must be done after post_fn - issues may change because of it
             if not overpass.is_editing_address(changeset_issues):
                 print(f'🏡 Skipped {changeset_id}: Not editing addresses')
@@ -183,6 +200,7 @@ def main():
 
             # deleted users will not read the discussion
             if user is None:
+                print(f'❌ Skipped {changeset_id}: User not found')
                 continue
 
             message = compose_message(user, changeset_issues)

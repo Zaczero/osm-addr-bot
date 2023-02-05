@@ -1,3 +1,5 @@
+from functools import cache
+
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from config import OSM_USERNAME, OSM_PASSWORD
@@ -9,12 +11,14 @@ class OsmApi:
         self.base_url = 'https://api.openstreetmap.org/api/0.6'
         self.c = get_http_client(auth=(OSM_USERNAME, OSM_PASSWORD))
 
+    @cache
     def get_authorized_user(self) -> dict:
         r = self.c.get(f'{self.base_url}/user/details.json')
         r.raise_for_status()
 
         return r.json()['user']
 
+    @cache
     @retry(stop=stop_after_attempt(5), wait=wait_exponential())
     def get_changeset(self, changeset_id: int) -> dict:
         r = self.c.get(f'{self.base_url}/changeset/{changeset_id}.json?include_discussion=true')
@@ -22,6 +26,7 @@ class OsmApi:
 
         return r.json()['elements'][0]
 
+    @cache
     @retry(stop=stop_after_attempt(5), wait=wait_exponential())
     def get_user(self, user_id: int) -> dict | None:
         r = self.c.get(f'{self.base_url}/user/{user_id}.json')

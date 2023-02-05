@@ -181,7 +181,7 @@ class Overpass:
 
         data = r.json()['elements']
         data_iter = iter(data)
-        changeset_result = set(valid_issues)
+        result = set(valid_issues)
 
         for issue in valid_issues:
             return_size = 0
@@ -211,11 +211,11 @@ class Overpass:
                 raise
 
             if ref_duplicates:
-                changeset_result.update(ref_duplicates)
+                result.update(ref_duplicates)
             else:
-                changeset_result.remove(issue)
+                result.remove(issue)
 
-        return list(changeset_result)
+        return list(result)
 
     def query_place_not_in_area(self, issues: list[OverpassEntry]) -> list[OverpassEntry]:
         timeout = 300
@@ -313,12 +313,12 @@ class Overpass:
 
     def is_editing_address(self, issues: dict[Check, list[OverpassEntry]]) -> bool:
         timeout = 300
-        partitions: dict[int, set[OverpassEntry]] = {}
-        entry_map: dict[str, dict[int, OverpassEntry]] = {}
+        partitions: dict[int, set[OverpassEntry]] = defaultdict(set)
+        entry_map: dict[str, dict[int, OverpassEntry]] = defaultdict(dict)
 
         for entry in chain.from_iterable(issues.values()):
-            partitions.setdefault(entry.timestamp, set()).add(entry)
-            entry_map.setdefault(entry.element_type, {})[entry.element_id] = entry
+            partitions[entry.timestamp].add(entry)
+            entry_map[entry.element_type][entry.element_id] = entry
 
         for partition_time, partition_issues in partitions.items():
             partition_query = build_partition_query(partition_time, list(partition_issues), timeout=timeout)
