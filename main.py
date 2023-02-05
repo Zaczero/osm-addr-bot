@@ -19,11 +19,6 @@ LINK_SORT_DICT = {
 
 def should_discuss(changeset: dict) -> bool:
     changeset_id = changeset['id']
-
-    if changeset['changes_count'] > 2500:
-        print(f'🤖 Skipped {changeset_id}: Possible import')
-        return False
-
     created_by = changeset['tags'].get('created_by', '')
 
     if any(black.lower() in created_by.lower() for black in APP_BLACKLIST):

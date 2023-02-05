@@ -1,12 +1,30 @@
 from collections import defaultdict
 from itertools import chain
 
+from decorator import decorator
+
 from check import Check
 from config import SEARCH_BBOX, SEARCH_RELATION
 from duplicate_search import check_whitelist, duplicate_search
 from overpass_entry import OverpassEntry
 from state import State
 from utils import get_http_client, format_timestamp, parse_timestamp, escape_overpass, normalize
+
+
+@decorator
+def batch(func, size: int = 1000, *args, **kwargs):
+    assert len(args) >= 2 and isinstance(args[0], Overpass) and isinstance(args[1], list)
+
+    self = args[0]
+    task = args[1]
+    result = []
+
+    for subtask in (task[i:i + size] for i in range(0, len(task), size)):
+        subtask_result = func(self, subtask, *args[2:], **kwargs)
+        assert isinstance(subtask_result, list)
+        result.extend(subtask_result)
+
+    return result
 
 
 def get_bbox() -> str:
@@ -139,6 +157,7 @@ class Overpass:
 
         return result
 
+    @batch
     def query_duplicates(self, raw_issues: list[OverpassEntry]) -> list[OverpassEntry]:
         issues = [i for i in raw_issues if check_whitelist(i.tags)]
 
@@ -191,6 +210,7 @@ class Overpass:
 
         return list(result)
 
+    @batch
     def query_place_not_in_area(self, issues: list[OverpassEntry]) -> list[OverpassEntry]:
         timeout = 300
         query = build_place_not_in_area_query(issues, timeout=timeout)
@@ -222,6 +242,7 @@ class Overpass:
 
         return result
 
+    @batch
     def query_place_mistype(self, issues: list[OverpassEntry]) -> list[OverpassEntry]:
         timeout = 300
         query = build_place_mistype_query(issues, timeout=timeout)
@@ -254,6 +275,7 @@ class Overpass:
 
         return result
 
+    @batch
     def query_street_names(self, issues: list[OverpassEntry]) -> list[OverpassEntry]:
         timeout = 300
         query = build_street_names_query(issues, timeout=timeout)
