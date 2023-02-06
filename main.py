@@ -210,7 +210,7 @@ def main():
                 print(message)
                 print(f'✅ Notified https://www.openstreetmap.org/changeset/{changeset_id} [DRY_RUN]')
 
-            s.schedule_for_summary(changeset_issues)
+            s.add_to_summary(changeset_id, changeset_issues)
 
         if not DRY_RUN:
             s.write_state()

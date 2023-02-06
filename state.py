@@ -14,7 +14,7 @@ class State:
     start_ts: int
     end_ts: int
     _rescheduled_issues: dict[int, dict[str, list[dict]]]
-    _summary: dict[int, [dict, list[str]]]
+    _summary: dict[int, dict[str, list[dict]]]
     _fd: IO
 
     def __enter__(self):
@@ -39,7 +39,7 @@ class State:
         self.start_ts = max(now - STATE_MAX_BACKLOG, state)
         self.end_ts = self.start_ts
         self._rescheduled_issues = data.get('rescheduled_issues', {})
-        self._summary = data.get('summary', {})
+        self._summary = data.get('summary2', {})
 
         return self
 
@@ -75,17 +75,14 @@ class State:
                 .setdefault(check.identifier, []) \
                 .extend(asdict(i) for i in check_issues)
 
-    def schedule_for_summary(self, issues: dict[Check, list[OverpassEntry]]) -> None:
-        for check, check_issues in issues.items():
-            for issue in check_issues:
-                self._summary.pop(issue.uid, None)
+    def add_to_summary(self, changeset_id: int, issues: dict[Check, list[OverpassEntry]]) -> None:
+        self._summary.setdefault(changeset_id, {})
 
         for check, check_issues in issues.items():
-            for issue in check_issues:
-                if issue.uid not in self._summary:
-                    self._summary[issue.uid] = (asdict(issue), [check.identifier])
-                else:
-                    self._summary[issue.uid][1].append(check.identifier)
+            assert all(changeset_id == i.changeset_id for i in check_issues)
+            self._summary[changeset_id] \
+                .setdefault(check.identifier, []) \
+                .extend(asdict(i) for i in check_issues)
 
     def write_state(self):
         self._fd.seek(0)
@@ -94,5 +91,5 @@ class State:
         json.dump({
             'state': self.end_ts,
             'rescheduled_issues': self._rescheduled_issues,
-            'summary': self._summary
+            'summary2': self._summary
         }, self._fd, indent=2)
