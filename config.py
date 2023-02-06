@@ -42,3 +42,8 @@ PRO_USER_THRESHOLD = 600
 
 DUPLICATE_FALSE_POSITIVE_MAX_DIST = 2  # max 1 object separation
 DUPLICATE_BFS_EXCLUDE_ADDR = True
+
+# those people do not deserve to be greeted
+NOT_NICE_USERS = {
+    11496679  # 23-02-06, ptarac
+}

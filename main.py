@@ -4,7 +4,8 @@ from datetime import datetime
 
 from check import Check
 from checks import ALL_CHECKS
-from config import NEW_USER_THRESHOLD, PRO_USER_THRESHOLD, DRY_RUN, APP_BLACKLIST, IGNORE_ALREADY_DISCUSSED
+from config import NEW_USER_THRESHOLD, PRO_USER_THRESHOLD, DRY_RUN, APP_BLACKLIST, IGNORE_ALREADY_DISCUSSED, \
+    NOT_NICE_USERS
 from osmapi import OsmApi
 from overpass import Overpass
 from overpass_entry import OverpassEntry
@@ -123,7 +124,9 @@ def compose_message(user: dict, issues: dict[Check, list[OverpassEntry]]) -> str
 
         message += '\n'
 
-    if pro_user:
+    if user['id'] in NOT_NICE_USERS:
+        message = message.strip()
+    elif pro_user:
         message += 'Pozdrawiam! 🦀'
     else:
         message += 'Dokumentacja adresów (po polsku):\n' \
