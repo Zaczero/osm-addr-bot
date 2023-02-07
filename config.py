@@ -45,7 +45,7 @@ DUPLICATE_BFS_EXCLUDE_ADDR = True
 
 # those people do not deserve to be greeted
 NOT_NICE_USERS = {
-    11496679  # 23-02-06, ptarac
+    # 123123123
 }
 
 SUMMARY_MIN_EDIT_DELAY = 3600 * 24 * 2  # 2 days
