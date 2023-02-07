@@ -101,7 +101,7 @@ def build_place_mistype_query(issues: list[OverpassEntry], timeout: int) -> str:
 def build_street_names_query(issues: list[OverpassEntry], timeout: int) -> str:
     body = ''.join(
         f'{i.element_type}(id:{i.element_id});'
-        f'wr[highway][name="{escape_overpass(i.tags["addr:street"])}"](around:500);'
+        f'wr[highway][name="{escape_overpass(i.tags["addr:street"])}"](around:1000);'
         f'out tags;'
         f'out count;'
         for i in issues)
