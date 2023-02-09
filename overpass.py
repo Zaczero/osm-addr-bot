@@ -71,12 +71,14 @@ def build_duplicates_query(issues: list[OverpassEntry], timeout: int) -> str:
 
 def build_place_not_in_area_query(issues: list[OverpassEntry], timeout: int) -> str:
     body = ''.join(
-        f'{i.element_type}(id:{i.element_id});' +
+        f'{i.element_type}(id:{i.element_id});'
+        f'._->.a;' +
         ('' if i.element_type == 'node' else f'node({i.element_type[0]});') +
         f'is_in->.i;'
         f'('
-        f'wr.i[!admin_level][name="{escape_overpass(i.tags["addr:place"])}"];'
         f'area.i[!admin_level][name="{escape_overpass(i.tags["addr:place"])}"];'
+        f'wr.i[!admin_level][name="{escape_overpass(i.tags["addr:place"])}"];'
+        f'node[place][name="{escape_overpass(i.tags["addr:place"])}"](around.a:1500);'
         f');'
         f'out tags;'
         f'out count;'
