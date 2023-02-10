@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 from aliases import Tags, ElementType
-from utils import parse_timestamp
 
 UID_OFFSET = 1 << 27
 
@@ -18,6 +17,8 @@ class OverpassEntry:
 
     # noinspection PyTypeChecker
     def __post_init__(self):
+        from utils import parse_timestamp
+
         if isinstance(self.timestamp, str):
             self.timestamp = parse_timestamp(self.timestamp)
 

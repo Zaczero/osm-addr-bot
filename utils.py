@@ -7,6 +7,7 @@ from requests import Session
 
 from check import Check
 from config import USER_AGENT
+from overpass_entry import OverpassEntry
 
 
 def get_http_client(*, auth: tuple | None = None, headers: dict | None = None) -> Session:
@@ -48,7 +49,7 @@ def normalize(a: str) -> str:
     return MULTIPLE_SPACE_RE.sub(' ', a.strip().lower())
 
 
-def group_by_changeset(issues: dict[Check, list]) -> dict[int, dict[Check, list]]:
+def group_by_changeset(issues: dict[Check, list[OverpassEntry]]) -> dict[int, dict[Check, list[OverpassEntry]]]:
     grouped = defaultdict(lambda: defaultdict(list))
 
     for check, check_issues in issues.items():
