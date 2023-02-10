@@ -1,6 +1,7 @@
 from collections import defaultdict, deque
 from itertools import combinations
 
+from aliases import Tags
 from config import DUPLICATE_BFS_EXCLUDE_ADDR, DUPLICATE_FALSE_POSITIVE_MAX_DIST
 from overpass_entry import OverpassEntry
 
@@ -30,7 +31,7 @@ EQUAL_TAGS = (
 )
 
 
-def check_whitelist(tags: dict) -> bool:
+def check_whitelist(tags: Tags) -> bool:
     return all(
         any(
             t.startswith(w)
@@ -40,7 +41,7 @@ def check_whitelist(tags: dict) -> bool:
     )
 
 
-def check_equal_tag(left: dict, right: dict, key: str) -> bool:
+def check_equal_tag(left: Tags, right: Tags, key: str) -> bool:
     return left.get(key, None) == right.get(key, None)
 
 

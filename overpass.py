@@ -128,7 +128,7 @@ class Overpass:
         data = r.json()
         return parse_timestamp(data['osm3s']['timestamp_osm_base'])
 
-    def query(self, checks: list[Check]) -> dict[Check, list[OverpassEntry]] | bool:
+    def query(self) -> list[OverpassEntry] | bool:
         if self.state.start_ts == self.state.end_ts:
             return False
 
@@ -140,7 +140,7 @@ class Overpass:
 
         data = r.json()['elements']
         data = (e for e in data if any(t.startswith('addr:') for t in e.get('tags', [])))
-        result = defaultdict(list)
+        result = []
 
         for e in data:
             entry = OverpassEntry(
@@ -153,9 +153,7 @@ class Overpass:
             )
 
             if self.state.start_ts <= entry.timestamp <= self.state.end_ts:
-                for check in checks:
-                    if check.pre_fn(entry.tags):
-                        result[check].append(entry)
+                result.append(entry)
 
         return result
 

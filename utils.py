@@ -1,9 +1,11 @@
 import functools
 import re
+from collections import defaultdict
 from datetime import datetime, timezone
 
 from requests import Session
 
+from check import Check
 from config import USER_AGENT
 
 
@@ -44,3 +46,13 @@ MULTIPLE_SPACE_RE = re.compile(r'\s{2,}')
 
 def normalize(a: str) -> str:
     return MULTIPLE_SPACE_RE.sub(' ', a.strip().lower())
+
+
+def group_by_changeset(issues: dict[Check, list]) -> dict[int, dict[Check, list]]:
+    grouped = defaultdict(lambda: defaultdict(list))
+
+    for check, check_issues in issues.items():
+        for i in check_issues:
+            grouped[i.changeset_id][check].append(i)
+
+    return grouped

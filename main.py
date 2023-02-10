@@ -1,15 +1,20 @@
 import time
-from collections import defaultdict
 from datetime import datetime
+from itertools import chain
 
+from cachetools import cached
+from cachetools.keys import hashkey
+
+from category import Category
 from check import Check
-from checks import ALL_CHECKS
+from checks import OVERPASS_CATEGORIES
 from config import NEW_USER_THRESHOLD, PRO_USER_THRESHOLD, DRY_RUN, APP_BLACKLIST, IGNORE_ALREADY_DISCUSSED, \
     NOT_NICE_USERS
 from osmapi import OsmApi
 from overpass import Overpass
 from overpass_entry import OverpassEntry
 from state import State
+from utils import group_by_changeset
 
 LINK_SORT_DICT = {
     'node': 0,
@@ -18,7 +23,9 @@ LINK_SORT_DICT = {
 }
 
 
-def should_discuss(changeset: dict) -> bool:
+@cached(cache={}, key=lambda osm, changeset_id: hashkey(changeset_id))
+def should_discuss(osm: OsmApi, changeset_id: int) -> bool:
+    changeset = osm.get_changeset(changeset_id)
     changeset_id = changeset['id']
     created_by = changeset['tags'].get('created_by', '')
 
@@ -30,7 +37,6 @@ def should_discuss(changeset: dict) -> bool:
         if discussion['uid'] == changeset['uid']:
             continue
 
-        # noinspection SpellCheckingInspection
         if any(word in discussion['text'] for word in ('addr', 'adres')):
             if not IGNORE_ALREADY_DISCUSSED:
                 print(f'💬 Skipped {changeset_id}: Already discussed')
@@ -48,9 +54,7 @@ def filter_should_not_discuss(osm: OsmApi, issues: dict[Check, list[OverpassEntr
     print(f'[2/?] Filtering {len(changeset_ids)} changeset{"" if len(changeset_ids) == 1 else "s"}…')
 
     for changeset_id in list(changeset_ids):
-        changeset = osm.get_changeset(changeset_id)
-
-        if not should_discuss(changeset):
+        if not should_discuss(osm, changeset_id):
             changeset_ids.remove(changeset_id)
 
     for check, check_issues in list(issues.items()):
@@ -95,28 +99,33 @@ def filter_priority(issues: dict[Check, list[OverpassEntry]], *, consider_post_f
             issues.pop(check)
 
 
-# noinspection SpellCheckingInspection
-def compose_message(user: dict, issues: dict[Check, list[OverpassEntry]]) -> str:
+def compose_message(cat: Category, user: dict, issues: dict[Check, list[OverpassEntry]]) -> str:
     new_user = user['changesets']['count'] <= NEW_USER_THRESHOLD
     pro_user = user['changesets']['count'] >= PRO_USER_THRESHOLD
 
     message = ''
 
+    # header
     if new_user:
         message += '🗺️ Witaj na OpenStreetMap!\n\n'
 
-    if pro_user:
-        message += 'Zauważyłem, że Twoja zmiana zawiera niepoprawne adresy. ' \
-                   'Przygotowałem listę obiektów oraz dodatkowe informacje:\n\n'
-    else:
-        message += 'Zauważyłem, że Twoja zmiana zawiera niepoprawne adresy. ' \
-                   'Przygotowałem listę obiektów do poprawy oraz dodatkowe informacje:\n\n'
+    is_critical = any(c.critical for c in issues)
 
+    header = cat.header_critical if is_critical else cat.header
+    assert not header.endswith('\n')
+    message += header
+    message += '\n\n'
+
+    # body
     for check, entries in issues.items():
-        if pro_user:
-            message += check.message + '\n'
+        assert entries
+        assert not check.desc.endswith('\n')
+        assert (check.extra is None) or (not check.extra.endswith('\n'))
+
+        if pro_user or (check.extra is None):
+            message += check.desc + '\n'
         else:
-            message += check.message + ' ' + check.message_fix + '\n'
+            message += check.desc + ' ' + check.extra + '\n'
 
         for entry in sorted(entries, key=lambda e: LINK_SORT_DICT[e.element_type]):
             assert isinstance(entry, OverpassEntry)
@@ -124,15 +133,23 @@ def compose_message(user: dict, issues: dict[Check, list[OverpassEntry]]) -> str
 
         message += '\n'
 
+    # footer
+    docs = list(filter(None, chain([cat.docs], (c.docs for c in issues))))
+
+    assert all((d is None) or (not d.endswith('\n')) for d in docs)
+
+    if pro_user or (docs is None):
+        pass
+    else:
+        message += '\n'.join(docs)
+        message += '\n\n'
+
     if user['id'] in NOT_NICE_USERS:
         message = message.strip()
     elif pro_user:
         message += 'Pozdrawiam! 🦀'
     else:
-        message += 'Dokumentacja adresów (po polsku):\n' \
-                   'https://wiki.openstreetmap.org/wiki/Pl:Key:addr:*\n' \
-                   '\n' \
-                   'W razie problemów lub pytań, proszę pisać. Chętnie pomogę.\n' \
+        message += 'W razie problemów lub pytań, proszę pisać. Chętnie pomogę.\n' \
                    'Pozdrawiam! 🦀'
 
     return message
@@ -155,62 +172,64 @@ def main():
 
         print(f'Time range: {datetime.utcfromtimestamp(s.start_ts)} - {datetime.utcfromtimestamp(s.end_ts)}')
         print(f'[1/?] Querying issues…')
-        queried = overpass.query(ALL_CHECKS)
+        changed = overpass.query()
 
-        if queried is False:
+        if changed is False:
             print('🕒️ Overpass is updating, try again shortly')
             return
 
-        filter_should_not_discuss(osm, queried)
-        filter_priority(queried, consider_post_fn=True)
-        filter_post_fn(overpass, queried)
+        # TODO: fix progress numbering
+        for cat in OVERPASS_CATEGORIES:
+            print(f'📂 Category: {cat.identifier}')
 
-        issues: dict[int, dict[Check, list[OverpassEntry]]] = defaultdict(lambda: defaultdict(list))
+            subset = cat.map_checks(changed)
 
-        for check, check_issues in queried.items():
-            for i in check_issues:
-                issues[i.changeset_id][check].append(i)
+            filter_should_not_discuss(osm, subset)
+            filter_priority(subset, consider_post_fn=True)
+            filter_post_fn(overpass, subset)
 
-        queried_len = len(issues)
-        merged_len = s.merge_rescheduled_issues(issues)
+            groups = group_by_changeset(subset)
+            discovered_len = len(groups)
+            merged_len = s.merge_rescheduled_issues(groups)
 
-        if merged_len:
-            print(f'Total changesets: {queried_len}+{merged_len}')
-        else:
-            print(f'Total changesets: {queried_len}')
-
-        for changeset_id, changeset_issues in issues.items():
-            changeset = osm.get_changeset(changeset_id)
-
-            if changeset['open']:
-                print(f'🔓️ Rescheduled {changeset_id}: Open changeset')
-                s.reschedule_issues(changeset_id, changeset_issues)
-                continue
-
-            # this must be done after post_fn - issues may change because of it
-            if not overpass.is_editing_address(changeset_issues):
-                print(f'🏡 Skipped {changeset_id}: Not editing addresses')
-                continue
-
-            filter_priority(changeset_issues, consider_post_fn=False)
-
-            user = osm.get_user(changeset['uid'])
-
-            # deleted users will not read the discussion
-            if user is None:
-                print(f'❌ Skipped {changeset_id}: User not found')
-                continue
-
-            message = compose_message(user, changeset_issues)
-
-            if not DRY_RUN:
-                osm.post_comment(changeset_id, message)
-                print(f'✅ Notified https://www.openstreetmap.org/changeset/{changeset_id}')
+            if merged_len:
+                print(f'Total changesets: {discovered_len}+{merged_len}')
             else:
-                print(message)
-                print(f'✅ Notified https://www.openstreetmap.org/changeset/{changeset_id} [DRY_RUN]')
+                print(f'Total changesets: {discovered_len}')
 
-            s.add_to_summary(changeset_id, changeset_issues)
+            for changeset_id, changeset_issues in groups.items():
+                changeset = osm.get_changeset(changeset_id)
+
+                if changeset['open']:
+                    print(f'🔓️ Rescheduled {changeset_id}: Open changeset')
+                    s.reschedule_issues(changeset_id, changeset_issues)
+                    continue
+
+                # TODO: this is category-specific
+                # this must be done after post_fn - issues may change because of it
+                if not overpass.is_editing_address(changeset_issues):
+                    print(f'🏡 Skipped {changeset_id}: Not editing addresses')
+                    continue
+
+                filter_priority(changeset_issues, consider_post_fn=False)
+
+                user = osm.get_user(changeset['uid'])
+
+                # deleted users will not read the discussion
+                if user is None:
+                    print(f'❌ Skipped {changeset_id}: User not found')
+                    continue
+
+                message = compose_message(cat, user, changeset_issues)
+
+                if not DRY_RUN:
+                    osm.post_comment(changeset_id, message)
+                    print(f'✅ Notified https://www.openstreetmap.org/changeset/{changeset_id}')
+                else:
+                    print(message)
+                    print(f'✅ Notified https://www.openstreetmap.org/changeset/{changeset_id} [DRY_RUN]')
+
+                # TODO: s.add_to_summary(changeset_id, changeset_issues)
 
         if not DRY_RUN:
             s.write_state()

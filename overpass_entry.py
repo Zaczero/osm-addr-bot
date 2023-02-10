@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from aliases import Tags, ElementType
 from utils import parse_timestamp
 
 UID_OFFSET = 1 << 27
@@ -9,9 +10,9 @@ UID_OFFSET = 1 << 27
 class OverpassEntry:
     timestamp: int
     changeset_id: int
-    element_type: str
+    element_type: ElementType
     element_id: int
-    tags: dict[str, str]
+    tags: Tags
     nodes: list[int]
     uid: int = 0
 

@@ -1,12 +1,16 @@
 from dataclasses import dataclass
 from typing import Callable, Any, Optional
 
+from aliases import Identifier, Tags
+
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class Check:
-    identifier: str
+    identifier: Identifier
     priority: int
-    message: str
-    message_fix: str
-    pre_fn: Callable[[dict[str, str]], bool]
+    critical: bool
+    desc: str
+    extra: str | None
+    docs: str | None
+    pre_fn: Callable[[Tags], bool]
     post_fn: Optional[Callable[[Any, list], list]] = None
