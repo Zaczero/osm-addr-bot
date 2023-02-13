@@ -78,7 +78,7 @@ def build_place_not_in_area_query(issues: list[OverpassEntry], timeout: int) -> 
         f'('
         f'area.i[!admin_level][name="{escape_overpass(i.tags["addr:place"])}"];'
         f'wr.i[!admin_level][name="{escape_overpass(i.tags["addr:place"])}"];'
-        f'node[place][name="{escape_overpass(i.tags["addr:place"])}"](around.a:1500);'
+        f'node[place][name="{escape_overpass(i.tags["addr:place"])}"](around.a:3000);'
         f');'
         f'out tags;'
         f'out count;'
