@@ -255,14 +255,16 @@ class Overpass:
         result = []
 
         for issue in issues:
+            read_size = 0
             is_in = set()
 
             for e in data_iter:
                 # check for end of section
                 if e['type'] == 'count':
-                    assert int(e['tags']['total']) == len(is_in)
+                    assert int(e['tags']['total']) == read_size
                     break
 
+                read_size += 1
                 is_in.add(e['tags']['name'])
             else:
                 raise
