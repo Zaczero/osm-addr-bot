@@ -15,9 +15,13 @@ APP_BLACKLIST = (
     'Organic Maps',
     'MAPS.ME',
 
+    'OsmHydrant',
+    'aed.openstreetmap.org.pl',
+    'openaedmap.org',
+
     # backup, general blacklist
     'Android',
-    'iOS'
+    'iOS',
 )
 
 SEARCH_RELATION = 49715
