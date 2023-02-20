@@ -8,8 +8,8 @@ from cachetools.keys import hashkey
 from category import Category
 from check import Check
 from checks import OVERPASS_CATEGORIES
-from config import NEW_USER_THRESHOLD, PRO_USER_THRESHOLD, DRY_RUN, APP_BLACKLIST, IGNORE_ALREADY_DISCUSSED, \
-    NOT_NICE_USERS
+from config import (APP_BLACKLIST, DRY_RUN, IGNORE_ALREADY_DISCUSSED,
+                    NEW_USER_THRESHOLD, NOT_NICE_USERS, PRO_USER_THRESHOLD)
 from osmapi import OsmApi
 from overpass import Overpass
 from overpass_entry import OverpassEntry
@@ -70,8 +70,11 @@ def filter_post_fn(overpass: Overpass, issues: dict[Check, list[OverpassEntry]])
     check_post = [(c, i) for c, i in issues.items() if c.post_fn]
 
     for i, (check, check_issues) in enumerate(check_post):
-        print(f'[{3 + i}/{2 + len(check_post)}] Filtering {len(check_issues)} × {check.identifier}…')
+        print(f'[{3 + i}/{2 + len(check_post)}] Filtering {len(check_issues)} × {check.identifier}…', end='')
+
+        time_start = time.perf_counter()
         new_issues = check.post_fn(overpass, check_issues)
+        print(f' ({time.perf_counter() - time_start:.1F} sec)')
 
         if new_issues:
             issues[check] = new_issues
