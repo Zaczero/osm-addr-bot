@@ -1,18 +1,18 @@
 [[source]]
+name = "pypi"
 url = "https://pypi.org/simple"
 verify_ssl = true
-name = "pypi"
 
 [packages]
+cachetools = "*"
+decorator = "*"
 requests = "*"
 tenacity = "*"
-xmltodict = "*"
 tqdm = "*"
-decorator = "*"
-cachetools = "*"
+xmltodict = "*"
 
 [dev-packages]
+autopep8 = "*"
 
 [requires]
-python_version = "3.10"
-python_full_version = "3.10.8"
+python_version = "3.11"
