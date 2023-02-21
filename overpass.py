@@ -4,7 +4,7 @@ from itertools import chain
 
 from decorator import decorator
 
-from aliases import ElementType
+from aliases import ElementType, Tags
 from category import Category
 from check import Check
 from config import SEARCH_BBOX, SEARCH_RELATION
@@ -314,9 +314,6 @@ class Overpass:
         return result
 
     def is_editing_tags(self, cat: Category, issues: dict[Check, list[OverpassEntry]]) -> bool:
-        if not cat.edit_tags and not any(c.edit_tags for c in issues):
-            return False
-
         timeout = 300
         partitions: dict[int, set[OverpassEntry]] = defaultdict(set)
         entry_map: dict[ElementType, dict[int, tuple[Check, OverpassEntry]]] = defaultdict(dict)
@@ -343,10 +340,14 @@ class Overpass:
 
             for element in elements:
                 ref_check, ref_entry = entry_map[element['type']][element['id']]
-                tags_diff = {k: v for k, v in set(ref_entry.tags.items()) - set(element.get('tags', {}).items())}
+                tags_diff: Tags = {k: v for k, v in set(ref_entry.tags.items()) - set(element.get('tags', {}).items())}
 
-                for pattern in chain(cat.edit_tags, ref_check.edit_tags):
-                    if any(fnmatch(k, pattern) for k in tags_diff):
+                # selector by category group if set
+                if cat.selectors:
+                    if cat.is_selected(tags_diff):
+                        return True
+                else:
+                    if ref_check.is_selected(tags_diff):
                         return True
 
         return False

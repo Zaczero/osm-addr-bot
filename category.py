@@ -1,29 +1,28 @@
-from collections import defaultdict
-from dataclasses import dataclass, field
-from typing import Callable
+from dataclasses import dataclass
+from typing import Iterable
 
-from aliases import Identifier, Tags
 from check import Check
+from check_base import CheckBase
 from overpass_entry import OverpassEntry
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
-class Category:
-    identifier: Identifier
+class Category(CheckBase):
     header_critical: str
     header: str
     docs: str | None
-    pre_fn: Callable[[Tags], bool]
-    edit_tags: tuple[str, ...] = tuple()
-    checks: list[Check]
 
-    def map_checks(self, entries: list[OverpassEntry]) -> dict[Check, list[OverpassEntry]]:
-        result = defaultdict(list)
+    checks: tuple[Check, ...]
 
-        for e in entries:
-            if self.pre_fn(e.tags):
-                for c in self.checks:
-                    if c.pre_fn(e.tags):
-                        result[c].append(e)
+    def map_checks(self, entries: Iterable[OverpassEntry]) -> dict[Check, list[OverpassEntry]]:
+        # filter with category selectors if set
+        if self.selectors:
+            entries = [e for e in entries if self.is_selected(e.tags)]
+
+        result = {}
+
+        for c in self.checks:
+            if value := [e for e in entries if c.is_selected(e.tags) and (c.pre_fn is None or c.pre_fn(e.tags))]:
+                result[c] = value
 
         return result

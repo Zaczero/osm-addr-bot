@@ -2,7 +2,7 @@ from functools import cache
 
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from config import OSM_USERNAME, OSM_PASSWORD
+from config import OSM_PASSWORD, OSM_USERNAME
 from utils import get_http_client
 
 

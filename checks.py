@@ -1,5 +1,6 @@
 import re
 from itertools import chain
+from xml.dom.minidom import Identified
 
 from category import Category
 from check import Check
@@ -9,7 +10,7 @@ from utils import normalize
 
 POSTCODE_RE = re.compile(r'^\d{2}-\d{3}([;,]\d{2}-\d{3})*$')
 
-OVERPASS_CATEGORIES = [
+OVERPASS_CATEGORIES: tuple[Category, ...] = (
     Category(
         identifier='ADDRESS',
 
@@ -22,10 +23,9 @@ OVERPASS_CATEGORIES = [
         docs='Dokumentacja adresów (po polsku):\n'
              'https://wiki.openstreetmap.org/wiki/Pl:Key:addr:*',
 
-        pre_fn=lambda t: any(key.startswith('addr:') for key in t),
-        edit_tags=('addr:*', ),
+        selectors=('addr:*',),
 
-        checks=[
+        checks=(
             Check(
                 identifier='BAD_CITY_WITH_PLACE',
                 priority=50,
@@ -37,7 +37,8 @@ OVERPASS_CATEGORIES = [
 
                 docs=None,
 
-                pre_fn=lambda t: ('addr:city' in t) and ('addr:place' in t) and (t['addr:city'] != t['addr:place']),
+                selectors=('addr:city', 'addr:place'),
+                pre_fn=lambda t: (t['addr:city'] != t['addr:place']),
                 post_fn=lambda o, i: o.query_place_not_in_area(i)
             ),
 
@@ -51,7 +52,8 @@ OVERPASS_CATEGORIES = [
 
                 docs=None,
 
-                pre_fn=lambda t: ('addr:postcode' in t) and (not POSTCODE_RE.match(t['addr:postcode']))
+                selectors=('addr:postcode',),
+                pre_fn=lambda t: (not POSTCODE_RE.match(t['addr:postcode']))
             ),
 
             Check(
@@ -64,7 +66,8 @@ OVERPASS_CATEGORIES = [
 
                 docs=None,
 
-                pre_fn=lambda t: ('addr:city' in t) and ('addr:place' in t) and (t['addr:city'] != t['addr:place']) and
+                selectors=('addr:city', 'addr:place'),
+                pre_fn=lambda t: (t['addr:city'] != t['addr:place']) and
                                  (normalize(t['addr:city']) == normalize(t['addr:place'])),
             ),
 
@@ -79,7 +82,7 @@ OVERPASS_CATEGORIES = [
 
                 docs=None,
 
-                pre_fn=lambda t: ('addr:housenumber' in t),
+                selectors=('addr:housenumber',),
                 post_fn=lambda o, i: o.query_duplicates(i)
             ),
 
@@ -94,7 +97,8 @@ OVERPASS_CATEGORIES = [
 
                 docs=None,
 
-                pre_fn=lambda t: ('addr:housenumber' in t) and ('addr:city' not in t) and ('addr:place' not in t)
+                selectors=('addr:housenumber',),
+                pre_fn=lambda t: ('addr:city' not in t) and ('addr:place' not in t)
             ),
 
             Check(
@@ -108,8 +112,8 @@ OVERPASS_CATEGORIES = [
 
                 docs=None,
 
-                pre_fn=lambda t: ('addr:housenumber' in t) and ('addr:city' in t) and
-                                 ('addr:place' not in t) and ('addr:street' not in t)
+                selectors=('addr:housenumber', 'addr:city'),
+                pre_fn=lambda t: ('addr:place' not in t) and ('addr:street' not in t)
             ),
 
             Check(
@@ -122,7 +126,7 @@ OVERPASS_CATEGORIES = [
 
                 docs=None,
 
-                pre_fn=lambda t: ('addr:place' in t),
+                selectors=('addr:place',),
                 post_fn=lambda o, i: o.query_place_mistype(i)
             ),
 
@@ -138,7 +142,7 @@ OVERPASS_CATEGORIES = [
 
                 docs=None,
 
-                pre_fn=lambda t: ('addr:place' in t) and ('addr:street' in t)
+                selectors=('addr:place', 'addr:street'),
             ),
 
             Check(
@@ -152,24 +156,17 @@ OVERPASS_CATEGORIES = [
 
                 docs=None,
 
-                pre_fn=lambda t: ('addr:street' in t),
+                selectors=('addr:street',),
                 post_fn=lambda o, i: o.query_street_names(i)
             ),
-        ]
+        )
     ),
-]
+)
 
-CHANGESET_CATEGORIES = [
+CHANGESET_CATEGORIES: tuple[Category, ...] = tuple()
 
-]
-
-ALL_CATEGORIES = list(chain(
-    OVERPASS_CATEGORIES,
-    CHANGESET_CATEGORIES
-))
-
-ALL_CHECKS = list(chain.from_iterable(c.checks for c in ALL_CATEGORIES))
-
-ALL_IDS = [c.identifier for c in ALL_CATEGORIES] + [c.identifier for c in ALL_CHECKS]
+ALL_CATEGORIES = OVERPASS_CATEGORIES + CHANGESET_CATEGORIES
+ALL_CHECKS = tuple(chain.from_iterable(c.checks for c in ALL_CATEGORIES))
+ALL_IDS = tuple(c.identifier for c in chain(ALL_CATEGORIES, ALL_CHECKS))
 
 assert len(set(ALL_IDS)) == len(ALL_IDS), 'Identifiers must be unique'
