@@ -1,8 +1,5 @@
 from collections import defaultdict
-from fnmatch import fnmatch
-from itertools import chain
-
-from decorator import decorator
+from typing import Iterable
 
 from aliases import ElementType, Tags
 from category import Category
@@ -15,20 +12,44 @@ from utils import (escape_overpass, format_timestamp, get_http_client,
                    normalize, parse_timestamp)
 
 
-@decorator
-def batch(func, size: int = 1000, *args, **kwargs) -> list:
-    assert len(args) >= 2 and isinstance(args[0], Overpass) and isinstance(args[1], list)
+def batch(size: int = 1000):
+    def decorator(func):
+        def wrapper(*args, **kwargs) -> list:
+            assert len(args) >= 2 and isinstance(args[0], Overpass) and isinstance(args[1], list)
 
-    self = args[0]
-    task = args[1]
-    result = []
+            self = args[0]
+            task = args[1]
+            result = []
 
-    for subtask in (task[i:i + size] for i in range(0, len(task), size)):
-        subtask_result = func(self, subtask, *args[2:], **kwargs)
-        assert isinstance(subtask_result, list)
-        result.extend(subtask_result)
+            for subtask in (task[i:i + size] for i in range(0, len(task), size)):
+                subtask_result = func(self, subtask, *args[2:], **kwargs)
+                assert isinstance(subtask_result, list)
+                result.extend(subtask_result)
 
-    return result
+            return result
+        return wrapper
+    return decorator
+
+
+def tier(*tiers: Iterable[int]):
+    def decorator(func):
+        def wrapper(*args, **kwargs) -> list:
+            assert len(args) >= 2 and isinstance(args[0], Overpass) and isinstance(args[1], list)
+
+            self = args[0]
+            task = args[1]
+
+            for tier in tiers:
+                if not task:
+                    break
+
+                task = func(self, task, *args[2:], **kwargs, tier=tier)
+                assert isinstance(task, list)
+
+            return task
+
+        return wrapper
+    return decorator
 
 
 def get_bbox() -> str:
@@ -104,10 +125,10 @@ def build_place_mistype_query(issues: list[OverpassEntry], timeout: int) -> str:
     return f'[out:json][timeout:{timeout}]{get_bbox()};{body}'
 
 
-def build_street_names_query(issues: list[OverpassEntry], timeout: int) -> str:
+def build_street_names_query(issues: list[OverpassEntry], timeout: int, around: int) -> str:
     body = ''.join(
         f'{i.element_type}(id:{i.element_id});'
-        f'wr[highway][name](around:2500);'
+        f'wr[highway][name](around:{around});'
         f'out tags;'
         f'out count;'
         for i in issues)
@@ -161,7 +182,7 @@ class Overpass:
 
         return result
 
-    @batch
+    @batch()
     def query_duplicates(self, raw_issues: list[OverpassEntry]) -> list[OverpassEntry]:
         issues = [i for i in raw_issues if check_whitelist(i.tags)]
 
@@ -214,7 +235,7 @@ class Overpass:
 
         return list(result)
 
-    @batch
+    @batch()
     def query_place_not_in_area(self, issues: list[OverpassEntry]) -> list[OverpassEntry]:
         timeout = 300
         query = build_place_not_in_area_query(issues, timeout=timeout)
@@ -246,7 +267,7 @@ class Overpass:
 
         return result
 
-    @batch
+    @batch()
     def query_place_mistype(self, issues: list[OverpassEntry]) -> list[OverpassEntry]:
         timeout = 300
         query = build_place_mistype_query(issues, timeout=timeout)
@@ -281,10 +302,11 @@ class Overpass:
 
         return result
 
-    @batch
-    def query_street_names(self, issues: list[OverpassEntry]) -> list[OverpassEntry]:
+    @batch()
+    @tier(500, 1000, 3000)
+    def query_street_names(self, issues: list[OverpassEntry], *, tier: int) -> list[OverpassEntry]:
         timeout = 300
-        query = build_street_names_query(issues, timeout=timeout)
+        query = build_street_names_query(issues, timeout=timeout, around=tier)
 
         r = self.c.post(self.base_url, data={'data': query}, timeout=timeout)
         r.raise_for_status()
