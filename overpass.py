@@ -107,7 +107,7 @@ def build_place_mistype_query(issues: list[OverpassEntry], timeout: int) -> str:
 def build_street_names_query(issues: list[OverpassEntry], timeout: int) -> str:
     body = ''.join(
         f'{i.element_type}(id:{i.element_id});'
-        f'wr[highway][name="{escape_overpass(i.tags["addr:street"])}"](around:3000);'
+        f'wr[highway][name](around:2500);'
         f'out tags;'
         f'out count;'
         for i in issues)
@@ -227,16 +227,16 @@ class Overpass:
         result = []
 
         for issue in issues:
-            return_size = 0
+            read_size = 0
             place_ok = False
 
             for e in data_iter:
                 # check for end of section
                 if e['type'] == 'count':
-                    assert int(e['tags']['total']) == return_size
+                    assert int(e['tags']['total']) == read_size
                     break
 
-                return_size += 1
+                read_size += 1
                 place_ok = True
             else:
                 raise
@@ -294,21 +294,21 @@ class Overpass:
         result = []
 
         for issue in issues:
-            return_size = 0
-            street_ok = False
+            read_size = 0
+            street_names = set()
 
             for e in data_iter:
                 # check for end of section
                 if e['type'] == 'count':
-                    assert int(e['tags']['total']) == return_size
+                    assert int(e['tags']['total']) == read_size
                     break
 
-                return_size += 1
-                street_ok = True
+                read_size += 1
+                street_names.add(e['tags']['name'])
             else:
                 raise
 
-            if not street_ok:
+            if issue.tags['addr:street'] not in street_names:
                 result.append(issue)
 
         return result
