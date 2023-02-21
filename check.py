@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import Callable, Any, Optional
+from dataclasses import dataclass, field
+from typing import Any, Callable
 
 from aliases import Identifier, Tags
 
@@ -13,4 +13,5 @@ class Check:
     extra: str | None
     docs: str | None
     pre_fn: Callable[[Tags], bool]
-    post_fn: Optional[Callable[[Any, list], list]] = None
+    post_fn: Callable[[Any, list], list] | None = None
+    edit_tags: tuple[str, ...] = tuple()

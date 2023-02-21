@@ -1,18 +1,22 @@
 from collections import defaultdict
+from fnmatch import fnmatch
 from itertools import chain
 
 from decorator import decorator
 
+from aliases import ElementType
+from category import Category
 from check import Check
 from config import SEARCH_BBOX, SEARCH_RELATION
 from duplicate_search import check_whitelist, duplicate_search
 from overpass_entry import OverpassEntry
 from state import State
-from utils import get_http_client, format_timestamp, parse_timestamp, escape_overpass, normalize
+from utils import (escape_overpass, format_timestamp, get_http_client,
+                   normalize, parse_timestamp)
 
 
 @decorator
-def batch(func, size: int = 1000, *args, **kwargs):
+def batch(func, size: int = 1000, *args, **kwargs) -> list:
     assert len(args) >= 2 and isinstance(args[0], Overpass) and isinstance(args[1], list)
 
     self = args[0]
@@ -309,14 +313,18 @@ class Overpass:
 
         return result
 
-    def is_editing_address(self, issues: dict[Check, list[OverpassEntry]]) -> bool:
+    def is_editing_tags(self, cat: Category, issues: dict[Check, list[OverpassEntry]]) -> bool:
+        if not cat.edit_tags and not any(c.edit_tags for c in issues):
+            return False
+
         timeout = 300
         partitions: dict[int, set[OverpassEntry]] = defaultdict(set)
-        entry_map: dict[str, dict[int, OverpassEntry]] = defaultdict(dict)
+        entry_map: dict[ElementType, dict[int, tuple[Check, OverpassEntry]]] = defaultdict(dict)
 
-        for entry in chain.from_iterable(issues.values()):
-            partitions[entry.timestamp].add(entry)
-            entry_map[entry.element_type][entry.element_id] = entry
+        for check, entries in issues.items():
+            for entry in entries:
+                partitions[entry.timestamp].add(entry)
+                entry_map[entry.element_type][entry.element_id] = (check, entry)
 
         for partition_time, partition_issues in partitions.items():
             partition_query = build_partition_query(partition_time, list(partition_issues), timeout=timeout)
@@ -334,10 +342,11 @@ class Overpass:
                 raise
 
             for element in elements:
-                ref_entry = entry_map[element['type']][element['id']]
+                ref_check, ref_entry = entry_map[element['type']][element['id']]
                 tags_diff = {k: v for k, v in set(ref_entry.tags.items()) - set(element.get('tags', {}).items())}
 
-                if any(k.startswith('addr:') for k in tags_diff):
-                    return True
+                for pattern in chain(cat.edit_tags, ref_check.edit_tags):
+                    if any(fnmatch(k, pattern) for k in tags_diff):
+                        return True
 
         return False

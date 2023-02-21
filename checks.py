@@ -23,6 +23,7 @@ OVERPASS_CATEGORIES = [
              'https://wiki.openstreetmap.org/wiki/Pl:Key:addr:*',
 
         pre_fn=lambda t: any(key.startswith('addr:') for key in t),
+        edit_tags=('addr:*', ),
 
         checks=[
             Check(

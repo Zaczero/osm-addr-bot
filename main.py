@@ -181,6 +181,8 @@ def main():
             print('🕒️ Overpass is updating, try again shortly')
             return
 
+        assert isinstance(changed, list)
+
         # TODO: fix progress numbering
         for cat in OVERPASS_CATEGORIES:
             print(f'📂 Category: {cat.identifier}')
@@ -208,10 +210,9 @@ def main():
                     s.reschedule_issues(changeset_id, changeset_issues)
                     continue
 
-                # TODO: this is category-specific
                 # this must be done after post_fn - issues may change because of it
-                if not overpass.is_editing_address(changeset_issues):
-                    print(f'🏡 Skipped {changeset_id}: Not editing addresses')
+                if not overpass.is_editing_tags(cat, changeset_issues):
+                    print(f'🏡 Skipped {changeset_id}: Not editing tags')
                     continue
 
                 filter_priority(changeset_issues, consider_post_fn=False)

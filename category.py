@@ -1,5 +1,5 @@
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable
 
 from aliases import Identifier, Tags
@@ -14,6 +14,7 @@ class Category:
     header: str
     docs: str | None
     pre_fn: Callable[[Tags], bool]
+    edit_tags: tuple[str, ...] = tuple()
     checks: list[Check]
 
     def map_checks(self, entries: list[OverpassEntry]) -> dict[Check, list[OverpassEntry]]:
