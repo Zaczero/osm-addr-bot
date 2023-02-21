@@ -212,7 +212,7 @@ def main():
 
                 # this must be done after post_fn - issues may change because of it
                 if not overpass.is_editing_tags(cat, changeset_issues):
-                    print(f'🏡 Skipped {changeset_id}: Not editing tags')
+                    print(f'😇 Skipped {changeset_id}: Not guilty')
                     continue
 
                 filter_priority(changeset_issues, consider_post_fn=False)
