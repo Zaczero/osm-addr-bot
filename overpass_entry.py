@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 
-from aliases import Tags, ElementType
+from geopy import Point
+
+from aliases import ElementType, Tags
 
 UID_OFFSET = 1 << 27
 
@@ -13,6 +15,11 @@ class OverpassEntry:
     element_id: int
     tags: Tags
     nodes: list[int]
+
+    bb_min: Point
+    bb_max: Point
+    bb_size: tuple[float, float]
+
     uid: int = 0
 
     # noinspection PyTypeChecker

@@ -130,9 +130,13 @@ def compose_message(cat: Category, user: dict, issues: dict[Check, list[Overpass
         else:
             message += check.desc + ' ' + check.extra + '\n'
 
-        for entry in sorted(entries, key=lambda e: LINK_SORT_DICT[e.element_type]):
-            assert isinstance(entry, OverpassEntry)
-            message += f'https://www.openstreetmap.org/{entry.element_type}/{entry.element_id}\n'
+        for title, title_entries in check.map_title_entries(entries).items():
+            if title:
+                message += f'\n{title}\n'
+
+            for entry in sorted(title_entries, key=lambda e: LINK_SORT_DICT[e.element_type]):
+                assert isinstance(entry, OverpassEntry)
+                message += f'https://www.openstreetmap.org/{entry.element_type}/{entry.element_id}\n'
 
         message += '\n'
 

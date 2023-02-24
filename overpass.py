@@ -1,10 +1,13 @@
 from collections import defaultdict
 from typing import Iterable
 
+from geopy import Point
+from geopy.distance import distance
+
 from aliases import ElementType, Tags
 from category import Category
 from check import Check
-from config import SEARCH_BBOX, SEARCH_RELATION
+from config import LARGE_ELEMENT_MAX_SIZE, SEARCH_BBOX, SEARCH_RELATION
 from duplicate_search import check_whitelist, duplicate_search
 from overpass_entry import OverpassEntry
 from state import State
@@ -52,6 +55,21 @@ def tier(*tiers: Iterable[int]):
     return decorator
 
 
+def skip_large(max_size: int = LARGE_ELEMENT_MAX_SIZE):
+    def decorator(func):
+        def wrapper(*args, **kwargs) -> list:
+            assert len(args) >= 2 and isinstance(args[0], Overpass) and isinstance(args[1], list)
+
+            self = args[0]
+            task = args[1]
+
+            task = [e for e in task if e.bb_size[0] < max_size and e.bb_size[1] < max_size]
+
+            return func(self, task, *args[2:], **kwargs)
+        return wrapper
+    return decorator
+
+
 def get_bbox() -> str:
     e = SEARCH_BBOX
     min_lat, max_lat = e['min_lat'], e['max_lat']
@@ -68,7 +86,7 @@ def build_query(start_ts: int, end_ts: int, timeout: int) -> str:
            f'relation(id:{SEARCH_RELATION});' \
            f'map_to_area;' \
            f'nwr(changed:"{start}","{end}")(area);' \
-           f'out meta;'
+           f'out meta bb;'
 
 
 def build_partition_query(timestamp: int, issues: list[OverpassEntry], timeout: int) -> str:
@@ -147,7 +165,7 @@ class Overpass:
         timeout = 30
         query = f'[out:json][timeout:{timeout}];'
 
-        r = self.c.post(self.base_url, data={'data': query}, timeout=timeout)
+        r = self.c.post(self.base_url, data={'data': query}, timeout=timeout * 2)
         r.raise_for_status()
 
         data = r.json()
@@ -160,7 +178,7 @@ class Overpass:
         timeout = 300
         query = build_query(self.state.start_ts, self.state.end_ts, timeout=timeout)
 
-        r = self.c.post(self.base_url, data={'data': query}, timeout=timeout)
+        r = self.c.post(self.base_url, data={'data': query}, timeout=timeout * 2)
         r.raise_for_status()
 
         data = r.json()['elements']
@@ -168,13 +186,35 @@ class Overpass:
         result = []
 
         for e in data:
+            if e['type'] == 'node':
+                lat, lon = e['lat'], e['lon']
+
+                e['bounds'] = {
+                    'minlat': lat,
+                    'minlon': lon,
+                    'maxlat': lat,
+                    'maxlon': lon,
+                }
+
+            bb_min = Point(e['bounds']['minlat'], e['bounds']['minlon'])
+            bb_max = Point(e['bounds']['maxlat'], e['bounds']['maxlon'])
+            bb_size = (
+                # width
+                distance(bb_min, Point(bb_min.latitude, bb_max.longitude)).meters,
+                # height
+                distance(bb_min, Point(bb_max.latitude, bb_min.longitude)).meters
+            )
+
             entry = OverpassEntry(
                 timestamp=e['timestamp'],
                 changeset_id=e['changeset'],
                 element_type=e['type'],
                 element_id=e['id'],
                 tags=e['tags'],
-                nodes=e.get('nodes', [])
+                nodes=e.get('nodes', []),
+                bb_min=bb_min,
+                bb_max=bb_max,
+                bb_size=bb_size,
             )
 
             if self.state.start_ts <= entry.timestamp <= self.state.end_ts:
@@ -182,6 +222,7 @@ class Overpass:
 
         return result
 
+    @skip_large()
     @batch()
     def query_duplicates(self, raw_issues: list[OverpassEntry]) -> list[OverpassEntry]:
         issues = [i for i in raw_issues if check_whitelist(i.tags)]
@@ -192,7 +233,7 @@ class Overpass:
         timeout = 300
         query = build_duplicates_query(issues, timeout=timeout)
 
-        r = self.c.post(self.base_url, data={'data': query}, timeout=timeout)
+        r = self.c.post(self.base_url, data={'data': query}, timeout=timeout * 2)
         r.raise_for_status()
 
         data = r.json()['elements']
@@ -215,7 +256,10 @@ class Overpass:
                     element_type=e['type'],
                     element_id=e['id'],
                     tags=e['tags'],
-                    nodes=e.get('nodes', [])
+                    nodes=e.get('nodes', []),
+                    bb_min=Point(0, 0),
+                    bb_max=Point(0, 0),
+                    bb_size=(0, 0),
                 )
 
                 if e['type'] == 'node':
@@ -235,12 +279,13 @@ class Overpass:
 
         return list(result)
 
+    @skip_large()
     @batch()
     def query_place_not_in_area(self, issues: list[OverpassEntry]) -> list[OverpassEntry]:
         timeout = 300
         query = build_place_not_in_area_query(issues, timeout=timeout)
 
-        r = self.c.post(self.base_url, data={'data': query}, timeout=timeout)
+        r = self.c.post(self.base_url, data={'data': query}, timeout=timeout * 2)
         r.raise_for_status()
 
         data = r.json()['elements']
@@ -272,7 +317,7 @@ class Overpass:
         timeout = 300
         query = build_place_mistype_query(issues, timeout=timeout)
 
-        r = self.c.post(self.base_url, data={'data': query}, timeout=timeout)
+        r = self.c.post(self.base_url, data={'data': query}, timeout=timeout * 2)
         r.raise_for_status()
 
         data = r.json()['elements']
@@ -302,13 +347,14 @@ class Overpass:
 
         return result
 
+    @skip_large()
     @batch()
     @tier(500, 1000, 3000)
     def query_street_names(self, issues: list[OverpassEntry], *, tier: int) -> list[OverpassEntry]:
         timeout = 300
         query = build_street_names_query(issues, timeout=timeout, around=tier)
 
-        r = self.c.post(self.base_url, data={'data': query}, timeout=timeout)
+        r = self.c.post(self.base_url, data={'data': query}, timeout=timeout * 2)
         r.raise_for_status()
 
         data = r.json()['elements']
@@ -348,7 +394,7 @@ class Overpass:
         for partition_time, partition_issues in partitions.items():
             partition_query = build_partition_query(partition_time, list(partition_issues), timeout=timeout)
 
-            r = self.c.post(self.base_url, data={'data': partition_query}, timeout=timeout)
+            r = self.c.post(self.base_url, data={'data': partition_query}, timeout=timeout * 2)
             r.raise_for_status()
 
             elements = r.json()['elements']
