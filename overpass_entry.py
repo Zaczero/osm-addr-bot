@@ -1,10 +1,19 @@
 from dataclasses import dataclass
-
-from geopy import Point
+from typing import NamedTuple
 
 from aliases import ElementType, Tags
 
 UID_OFFSET = 1 << 27
+
+
+class Point(NamedTuple):
+    lat: float
+    lon: float
+
+
+class Size(NamedTuple):
+    width: float
+    height: float
 
 
 @dataclass(slots=True, kw_only=True)
@@ -18,7 +27,7 @@ class OverpassEntry:
 
     bb_min: Point
     bb_max: Point
-    bb_size: tuple[float, float]
+    bb_size: Size
 
     uid: int = 0
 

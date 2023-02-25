@@ -1,7 +1,6 @@
 from collections import defaultdict
 from typing import Iterable
 
-from geopy import Point
 from geopy.distance import distance
 
 from aliases import ElementType, Tags
@@ -9,7 +8,7 @@ from category import Category
 from check import Check
 from config import LARGE_ELEMENT_MAX_SIZE, SEARCH_BBOX, SEARCH_RELATION
 from duplicate_search import check_whitelist, duplicate_search
-from overpass_entry import OverpassEntry
+from overpass_entry import OverpassEntry, Point, Size
 from state import State
 from utils import (escape_overpass, format_timestamp, get_http_client,
                    normalize, parse_timestamp)
@@ -198,11 +197,9 @@ class Overpass:
 
             bb_min = Point(e['bounds']['minlat'], e['bounds']['minlon'])
             bb_max = Point(e['bounds']['maxlat'], e['bounds']['maxlon'])
-            bb_size = (
-                # width
-                distance(bb_min, Point(bb_min.latitude, bb_max.longitude)).meters,
-                # height
-                distance(bb_min, Point(bb_max.latitude, bb_min.longitude)).meters
+            bb_size = Size(
+                width=distance(bb_min, Point(bb_min.lat, bb_max.lon)).meters,
+                height=distance(bb_min, Point(bb_max.lat, bb_min.lon)).meters
             )
 
             entry = OverpassEntry(
