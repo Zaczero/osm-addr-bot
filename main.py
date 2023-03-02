@@ -228,6 +228,11 @@ def main():
                     print(f'❌ Skipped {changeset_id}: User not found')
                     continue
 
+                # check changesets count
+                if user['changesets']['count'] < cat.min_changesets:
+                    print(f'🌱 Skipped {changeset_id}: New user')
+                    continue
+
                 message = compose_message(cat, user, changeset_issues)
 
                 if not DRY_RUN:

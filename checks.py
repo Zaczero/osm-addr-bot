@@ -13,6 +13,7 @@ POSTCODE_RE = re.compile(r'^\d{2}-\d{3}([;,]\d{2}-\d{3})*$')
 OVERPASS_CATEGORIES: tuple[Category, ...] = (
     Category(
         identifier='ADDRESS',
+        min_changesets=0,
 
         header_critical='Zauważyłem, że Twoja zmiana zawiera niepoprawne adresy. '
                         'Przygotowałem listę obiektów do poprawy oraz dodatkowe informacje:',

@@ -8,6 +8,8 @@ from overpass_entry import OverpassEntry
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class Category(CheckBase):
+    min_changesets: int
+
     header_critical: str
     header: str
     docs: str | None
