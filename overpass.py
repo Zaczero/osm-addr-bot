@@ -332,7 +332,10 @@ class Overpass:
                     break
 
                 read_size += 1
-                is_in.add(e['tags']['name'])
+
+                for key in ('name', 'alt_name'):
+                    if val := e['tags'].get(key, None):
+                        is_in.add(val)
             else:
                 raise
 
@@ -369,7 +372,10 @@ class Overpass:
                     break
 
                 read_size += 1
-                street_names.add(e['tags']['name'])
+
+                for key in ('name', 'alt_name'):
+                    if val := e['tags'].get(key, None):
+                        street_names.add(val)
             else:
                 raise
 
