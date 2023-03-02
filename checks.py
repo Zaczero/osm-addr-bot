@@ -31,7 +31,7 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
                 priority=50,
 
                 critical=True,
-                desc="Wartość addr:city jest niezgodna z addr:place.",
+                desc="Podana kombinacja addr:city + addr:place jest nieprawidłowa.",
                 extra="Jeśli adres ma nazwę ulicy, usuń addr:place i zastosuj kombinację addr:city + addr:street. "
                       "Jeśli nie, pozostaw tylko addr:place.",
 
