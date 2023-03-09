@@ -164,7 +164,7 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
     ),
 
     Category(
-        identifier='REDUNDANT',
+        identifier='REDUNDANCY',
         min_changesets=0,
 
         header_critical='Zauważyłem, że Twoja zmiana zawiera nadmiarowe informacje. '
