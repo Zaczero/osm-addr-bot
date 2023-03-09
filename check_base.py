@@ -32,8 +32,9 @@ class CheckBase:
 
         if partial:
             return \
-                (not static_selectors or any(s in tags for s in static_selectors)) or \
-                (not dynamic_selectors or any(any(fnmatch(k, s) for k in tags) for s in dynamic_selectors))
+                any(s in tags for s in static_selectors) or \
+                any(any(fnmatch(k, s) for k in tags) for s in dynamic_selectors) \
+                or (not static_selectors and not dynamic_selectors)
         else:
             return \
                 all(s in tags for s in static_selectors) and \
