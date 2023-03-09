@@ -162,6 +162,39 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
             ),
         )
     ),
+
+    Category(
+        identifier='REDUNDANT',
+        min_changesets=0,
+
+        header_critical='Zauważyłem, że Twoja zmiana zawiera nadmiarowe informacje. '
+                        'Przygotowałem listę obiektów do poprawy oraz dodatkowe informacje:',
+
+        header='',
+
+        docs=None,
+
+        checks=(
+            Check(
+                identifier='PARCEL_LOCKER_WITH_NAME',
+
+                critical=True,
+                desc="Paczkomat nie powinien mieć nazwy.",
+                extra="Nazwa nadawana jest automatycznie, na podstawie wartości brand. "
+                      "Opcjonalnie, numer identyfikacyjny może być przekazany w polu ref.",
+
+                docs='Dokumentacja paczkomatów (po polsku):\n'
+                     'https://wiki.openstreetmap.org/wiki/Pl:Tag:amenity%3Dparcel_locker',
+
+                selectors=('brand:wikidata', 'name'),
+                pre_fn=lambda t: t['brand:wikidata'] in {
+                    'Q110738715',  # Allegro One Box
+                    'Q110970254',  # Paczkomat InPost
+                    'Q114273730',  # DPD Pickup Station
+                },
+            ),
+        )
+    ),
 )
 
 CHANGESET_CATEGORIES: tuple[Category, ...] = tuple()

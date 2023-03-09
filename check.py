@@ -9,7 +9,7 @@ from overpass_entry import OverpassEntry
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class Check(CheckBase):
-    priority: int
+    priority: int = 50
     critical: bool
     desc: str
     extra: str | None

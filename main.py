@@ -83,6 +83,9 @@ def filter_post_fn(overpass: Overpass, issues: dict[Check, list[OverpassEntry]])
 
 
 def filter_priority(issues: dict[Check, list[OverpassEntry]], *, consider_post_fn: bool) -> None:
+    '''
+    If two checks have the same issue, only the one with the highest priority is kept.
+    '''
     max_priorities = {}
 
     for check, check_issues in sorted(issues.items(), key=lambda t: t[0].priority, reverse=True):
@@ -115,15 +118,15 @@ def compose_message(cat: Category, user: dict, issues: dict[Check, list[Overpass
     is_critical = any(c.critical for c in issues)
 
     header = cat.header_critical if is_critical else cat.header
-    assert not header.endswith('\n')
+    assert not header.endswith('\n'), 'Header must not end with a newline'
     message += header
     message += '\n\n'
 
     # body
     for check, entries in issues.items():
         assert entries
-        assert not check.desc.endswith('\n')
-        assert (check.extra is None) or (not check.extra.endswith('\n'))
+        assert not check.desc.endswith('\n'), 'Description must not end with a newline'
+        assert (check.extra is None) or (not check.extra.endswith('\n')), 'Extra must not end with a newline'
 
         if pro_user or (check.extra is None):
             message += check.desc + '\n'
@@ -135,7 +138,6 @@ def compose_message(cat: Category, user: dict, issues: dict[Check, list[Overpass
                 message += f'\n{title}\n'
 
             for entry in sorted(title_entries, key=lambda e: LINK_SORT_DICT[e.element_type]):
-                assert isinstance(entry, OverpassEntry)
                 message += f'https://www.openstreetmap.org/{entry.element_type}/{entry.element_id}\n'
 
         message += '\n'
@@ -143,12 +145,12 @@ def compose_message(cat: Category, user: dict, issues: dict[Check, list[Overpass
     # footer
     docs = list(filter(None, chain([cat.docs], (c.docs for c in issues))))
 
-    assert all((d is None) or (not d.endswith('\n')) for d in docs)
+    assert all((not d.endswith('\n')) for d in docs), 'Documentation must not end with a newline'
 
-    if pro_user or (docs is None):
+    if pro_user or (not docs):
         pass
     else:
-        message += '\n'.join(docs)
+        message += '\n\n'.join(docs)
         message += '\n\n'
 
     if user['id'] in NOT_NICE_USERS:
