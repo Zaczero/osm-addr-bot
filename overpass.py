@@ -181,10 +181,13 @@ class Overpass:
         r.raise_for_status()
 
         data = r.json()['elements']
-        data = (e for e in data if any(t.startswith('addr:') for t in e.get('tags', [])))
         result = []
 
         for e in data:
+            # skip elements without tags for faster processing
+            if 'tags' not in e:
+                continue
+
             if e['type'] == 'node':
                 lat, lon = e['lat'], e['lon']
 
@@ -415,10 +418,10 @@ class Overpass:
 
                 # selector by category group if set
                 if cat.selectors:
-                    if cat.is_selected(tags_diff):
+                    if cat.is_selected(tags_diff, partial=True):
                         return True
                 else:
-                    if ref_check.is_selected(tags_diff):
+                    if ref_check.is_selected(tags_diff, partial=True):
                         return True
 
         return False

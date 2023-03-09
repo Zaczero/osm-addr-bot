@@ -24,12 +24,17 @@ class CheckBase:
     identifier: Identifier
     selectors: Selectors = tuple()
 
-    def is_selected(self, tags: Tags) -> bool:
+    def is_selected(self, tags: Tags, *, partial: bool = False) -> bool:
         if not self.selectors:
             return False
 
         static_selectors, dynamic_selectors = group_selectors(self.selectors)
 
-        return \
-            all(s in tags for s in static_selectors) and \
-            all(any(fnmatch(k, s) for k in tags) for s in dynamic_selectors)
+        if partial:
+            return \
+                (not static_selectors or any(s in tags for s in static_selectors)) or \
+                (not dynamic_selectors or any(any(fnmatch(k, s) for k in tags) for s in dynamic_selectors))
+        else:
+            return \
+                all(s in tags for s in static_selectors) and \
+                all(any(fnmatch(k, s) for k in tags) for s in dynamic_selectors)
