@@ -170,7 +170,8 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
         header_critical='Zauważyłem, że Twoja zmiana zawiera nadmiarowe informacje. '
                         'Przygotowałem listę obiektów do poprawy oraz dodatkowe informacje:',
 
-        header='',
+        header='Zauważyłem, że Twoja zmiana zawiera nadmiarowe informacje. '
+               'Przygotowałem listę obiektów oraz dodatkowe informacje:',
 
         docs=None,
 
