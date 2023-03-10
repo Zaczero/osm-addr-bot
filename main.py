@@ -201,7 +201,7 @@ def main():
 
             groups = group_by_changeset(subset)
             discovered_len = len(groups)
-            merged_len = s.merge_rescheduled_issues(groups)
+            merged_len = s.merge_rescheduled_issues(cat.identifier, groups)
 
             if merged_len:
                 print(f'Total changesets: {discovered_len}+{merged_len}')
@@ -213,7 +213,7 @@ def main():
 
                 if changeset['open']:
                     print(f'🔓️ Rescheduled {changeset_id}: Open changeset')
-                    s.reschedule_issues(changeset_id, changeset_issues)
+                    s.reschedule_issues(cat.identifier, changeset_id, changeset_issues)
                     continue
 
                 # this must be done after post_fn - issues may change because of it
