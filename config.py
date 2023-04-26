@@ -6,6 +6,10 @@ OSM_PASSWORD = os.getenv('OSM_PASSWORD')
 DRY_RUN = os.getenv('DRY_RUN', None) == '1'
 IGNORE_ALREADY_DISCUSSED = os.getenv('IGNORE_ALREADY_DISCUSSED', None) == '1'
 
+# Dedicated instance unavailable? Pick one from the public list:
+# https://wiki.openstreetmap.org/wiki/Overpass_API#Public_Overpass_API_instances
+OVERPASS_API_INTERPRETER = os.getenv('OVERPASS_API_INTERPRETER', 'https://overpass.monicz.dev/api/interpreter')
+
 USER_AGENT = f'osm-addr-bot (+https://github.com/Zaczero/osm-addr-bot)'
 
 APP_BLACKLIST = (

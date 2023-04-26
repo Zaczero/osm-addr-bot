@@ -6,7 +6,8 @@ from geopy.distance import distance
 from aliases import ElementType, Tags
 from category import Category
 from check import Check
-from config import LARGE_ELEMENT_MAX_SIZE, SEARCH_BBOX, SEARCH_RELATION
+from config import (LARGE_ELEMENT_MAX_SIZE, OVERPASS_API_INTERPRETER,
+                    SEARCH_BBOX, SEARCH_RELATION)
 from duplicate_search import check_whitelist, duplicate_search
 from overpass_entry import OverpassEntry, Point, Size
 from state import State
@@ -157,7 +158,7 @@ class Overpass:
     def __init__(self, state: State):
         self.state = state
 
-        self.base_url = 'https://overpass.monicz.dev/api/interpreter'
+        self.base_url = OVERPASS_API_INTERPRETER
         self.c = get_http_client()
 
     def get_timestamp_osm_base(self) -> int:
