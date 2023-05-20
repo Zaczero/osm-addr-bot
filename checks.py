@@ -87,20 +87,20 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
                 post_fn=lambda o, i: o.query_duplicates(i)
             ),
 
-            Check(
-                identifier='NUMBER_WITHOUT_CITY',
-                priority=30,
+            # Check(
+            #     identifier='NUMBER_WITHOUT_CITY',
+            #     priority=30,
 
-                critical=True,
-                desc="Adres jest niekompletny, brakuje informacji o miejscowości.",
-                extra="Jeśli adres ma nazwę ulicy, zastosuj kombinację addr:city + addr:street. "
-                      "Jeśli nie, przekaż nazwę miejscowości w addr:place.",
+            #     critical=True,
+            #     desc="Adres jest niekompletny, brakuje informacji o miejscowości.",
+            #     extra="Jeśli adres ma nazwę ulicy, zastosuj kombinację addr:city + addr:street. "
+            #           "Jeśli nie, przekaż nazwę miejscowości w addr:place.",
 
-                docs=None,
+            #     docs=None,
 
-                selectors=('addr:housenumber',),
-                pre_fn=lambda t: ('addr:city' not in t) and ('addr:place' not in t)
-            ),
+            #     selectors=('addr:housenumber',),
+            #     pre_fn=lambda t: ('addr:city' not in t) and ('addr:place' not in t)
+            # ),
 
             Check(
                 identifier='NUMBER_WITHOUT_STREET',
