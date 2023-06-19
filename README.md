@@ -1,8 +1,8 @@
 # osm-addr-bot
 
-![GitHub Pipenv locked Python version](https://img.shields.io/github/pipenv/locked/python-version/Zaczero/osm-addr-bot)
-[![GitHub](https://img.shields.io/github/license/Zaczero/osm-addr-bot)](https://github.com/Zaczero/osm-addr-bot/blob/main/LICENSE)
-[![GitHub Repo stars](https://img.shields.io/github/stars/Zaczero/osm-addr-bot?style=social)](https://github.com/Zaczero/osm-addr-bot)
+![GitHub Pipenv locked Python version](https://shields.monicz.dev/github/pipenv/locked/python-version/Zaczero/osm-addr-bot)
+[![Project license](https://shields.monicz.dev/github/license/Zaczero/osm-addr-bot)](https://github.com/Zaczero/osm-addr-bot/blob/main/LICENSE)
+[![GitHub Repo stars](https://shields.monicz.dev/github/stars/Zaczero/osm-addr-bot?style=social)](https://github.com/Zaczero/osm-addr-bot)
 
 🗺️ Easily configurable OpenStreetMap address validation bot
 
