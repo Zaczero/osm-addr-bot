@@ -1,6 +1,5 @@
 import re
 from itertools import chain
-from xml.dom.minidom import Identified
 
 from category import Category
 from check import Check
