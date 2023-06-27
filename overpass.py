@@ -100,11 +100,8 @@ def build_partition_query(timestamp: int, issues: list[OverpassEntry], timeout: 
 
 def build_duplicates_query(issues: list[OverpassEntry], timeout: int) -> str:
     body = ''.join(
-        f'{i.element_type}(id:{i.element_id})->.a;'
-        f'('
-        f'node["addr:housenumber"](around.a:100);' +
-        (f'wr[building](around.a:100);' if i.element_type != 'node' else '') +
-        f');'
+        f'{i.element_type}(id:{i.element_id});' +
+        (f'wr["addr:housenumber"](around:100);' if i.element_type == 'node' else 'node["addr:housenumber"](around:100);') +
         f'out body;'
         f'out count;'
         for i in issues)
@@ -242,12 +239,11 @@ class Overpass:
         result = set(issues)
 
         for issue in issues:
-            ref_n = []
-            ref_wr = []
+            ref = []
 
             for e in data_iter:
                 if e['type'] == 'count':
-                    assert int(e['tags']['total']) == len(ref_n) + len(ref_wr)
+                    assert int(e['tags']['total']) == len(ref)
                     break
 
                 entry = OverpassEntry(
@@ -263,15 +259,12 @@ class Overpass:
                     bb_size=(0, 0),
                 )
 
-                if e['type'] == 'node':
-                    ref_n.append(entry)
-                else:
-                    ref_wr.append(entry)
+                ref.append(entry)
 
             else:
                 raise
 
-            ref_duplicates = duplicate_search(issue, ref_n, ref_wr)
+            ref_duplicates = duplicate_search(issue, ref)
 
             if ref_duplicates:
                 result.update(ref_duplicates)
