@@ -1,6 +1,7 @@
 ARG NIX_PROFILE=/build-profile
 ARG NIX_TRANSFER_DIR=/fake-nix-store
 
+
 FROM nixos/nix AS nix
 
 ARG NIX_PROFILE
@@ -8,11 +9,12 @@ ARG NIX_TRANSFER_DIR
 
 COPY shell.nix ./
 
-RUN nix-channel --add https://channels.nixos.org/nixos-22.11 nixpkgs && \
+RUN nix-channel --add https://channels.nixos.org/nixos-23.05 nixpkgs && \
     nix-channel --update && \
     mkdir --parents $NIX_TRANSFER_DIR && \
     nix-env --profile $NIX_PROFILE --install --attr buildInputs --file shell.nix && \
     cp --archive $(nix-store --query --requisites $NIX_PROFILE) $NIX_TRANSFER_DIR
+
 
 FROM alpine
 
