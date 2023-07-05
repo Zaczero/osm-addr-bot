@@ -372,11 +372,11 @@ class Overpass:
 
                 for key in ('name', 'alt_name'):
                     if val := e['tags'].get(key, None):
-                        street_names.add(normalize(val))
+                        street_names.add(val)
             else:
                 raise
 
-            if normalize(issue.tags['addr:street']) not in street_names:
+            if issue.tags['addr:street'] not in street_names:
                 result.append(issue)
 
         return result
