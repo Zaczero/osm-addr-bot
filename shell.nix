@@ -10,7 +10,8 @@ pkgs.mkShell {
   shellHook = ''
     export PIPENV_VENV_IN_PROJECT=1
     export PIPENV_VERBOSITY=-1
-    [ ! -f ".venv/bin/activate" ] && pipenv sync --dev
-    exec pipenv shell --fancy
+    [ -v DOCKER ] && [ ! -f .venv/bin/activate ] && pipenv sync
+    [ ! -v DOCKER ] && [ ! -f .venv/bin/activate ] && pipenv sync --dev
+    [ ! -v DOCKER ] && exec pipenv shell --fancy
   '';
 }
