@@ -10,7 +10,7 @@ from utils import normalize
 POSTCODE_RE = re.compile(r'^\d{2}-\d{3}([;,]\d{2}-\d{3})*$')
 WEBSITE_PROTOCOL_RE = re.compile(r'^\w{2,}://')
 WEBSITE_DUPLICATED_PROTOCOL_RE = re.compile(r'^\w{2,}://\w{2,}://')
-WEBSITE_SHORTENER_RE = re.compile(r'^\w{2,}://(www\.)?(tinyurl\.com|tiny\.(cc|pl)|(bit|cutt)\.ly|g\.co|goo\.gl(?!/maps))/',
+WEBSITE_SHORTENER_RE = re.compile(r'^\w{2,}://(www\.)?(tinyurl\.com|tiny\.(cc|pl)|(bit|cutt)\.ly|[gt]\.co|goo\.gl(?!/maps))/',
                                   re.IGNORECASE)
 
 OVERPASS_CATEGORIES: tuple[Category, ...] = (
