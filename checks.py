@@ -8,6 +8,10 @@ from utils import normalize
 # TODO: more mistype checks
 
 POSTCODE_RE = re.compile(r'^\d{2}-\d{3}([;,]\d{2}-\d{3})*$')
+WEBSITE_PROTOCOL_RE = re.compile(r'^\w{2,}://')
+WEBSITE_DUPLICATED_PROTOCOL_RE = re.compile(r'^\w{2,}://\w{2,}://')
+WEBSITE_SHORTENER_RE = re.compile(r'^\w{2,}://(www\.)?(tinyurl\.com|tiny\.(cc|pl)|(bit|cutt)\.ly|g\.co|goo\.gl(?!/maps))/',
+                                  re.IGNORECASE)
 
 OVERPASS_CATEGORIES: tuple[Category, ...] = (
     Category(
@@ -194,6 +198,74 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
                 },
             ),
         )
+    ),
+
+    Category(
+        identifier='SYNTAX',
+        min_changesets=0,
+
+        header_critical='Zauważyłem, że Twoja zmiana zawiera niepoprawną składnię. '
+                        'Przygotowałem listę obiektów do poprawy oraz dodatkowe informacje:',
+
+        header='Zauważyłem, że Twoja zmiana zawiera niepoprawną składnię. '
+               'Przygotowałem listę obiektów oraz dodatkowe informacje:',
+
+        docs=None,
+
+        checks=(
+            Check(
+                identifier='WEBSITE_WITHOUT_PROTOCOL',
+
+                critical=True,
+                desc='W adresie strony internetowej brakuje protokołu.',
+                extra='Poprawny adres zaczyna się najczęściej od https:// lub http://.',
+
+                docs='Dokumentacja adresów WWW (po polsku):\n'
+                     'https://wiki.openstreetmap.org/wiki/Pl%3AKey%3Awebsite',
+
+                partial_selectors=True,
+                selectors=('url', 'website', 'contact:website'),
+                pre_fn=lambda t: \
+                ('url' in t and not WEBSITE_PROTOCOL_RE.match(t['url'])) or \
+                ('website' in t and not WEBSITE_PROTOCOL_RE.match(t['website'])) or \
+                ('contact:website' in t and not WEBSITE_PROTOCOL_RE.match(t['contact:website']))
+            ),
+
+            Check(
+                identifier='WEBSITE_WITH_REPEATED_PROTOCOL',
+
+                critical=True,
+                desc='Adres strony internetowej zawiera powtórzone protokoły.',
+                extra='Poprawny adres nie może zawierać więcej niż jednego protokołu, jak np. https://https://.',
+
+                docs='Dokumentacja adresów WWW (po polsku):\n'
+                     'https://wiki.openstreetmap.org/wiki/Pl%3AKey%3Awebsite',
+
+                partial_selectors=True,
+                selectors=('url', 'website', 'contact:website'),
+                pre_fn=lambda t: \
+                ('url' in t and WEBSITE_DUPLICATED_PROTOCOL_RE.match(t['url'])) or \
+                ('website' in t and WEBSITE_DUPLICATED_PROTOCOL_RE.match(t['website'])) or \
+                ('contact:website' in t and WEBSITE_DUPLICATED_PROTOCOL_RE.match(t['contact:website']))
+            ),
+
+            Check(
+                identifier='WEBSITE_URL_SHORTENER',
+
+                critical=True,
+                desc='Adres strony internetowej został skrócony przez serwis typu URL shortener.',
+                extra='Przekazując adres strony, upewnij się, że jest on w pełnej, bezpośredniej formie.',
+
+                docs=None,
+
+                partial_selectors=True,
+                selectors=('url', 'website', 'contact:website'),
+                pre_fn=lambda t: \
+                ('url' in t and WEBSITE_SHORTENER_RE.match(t['url'])) or \
+                ('website' in t and WEBSITE_SHORTENER_RE.match(t['website'])) or \
+                ('contact:website' in t and WEBSITE_SHORTENER_RE.match(t['contact:website']))
+            ),
+        ),
     ),
 )
 

@@ -22,11 +22,15 @@ def group_selectors(selectors: Selectors) -> tuple[Selectors, Selectors]:
 @dataclass(frozen=True, kw_only=True, slots=True)
 class CheckBase:
     identifier: Identifier
+    partial_selectors: bool = False
     selectors: Selectors = tuple()
 
-    def is_selected(self, tags: Tags, *, partial: bool = False) -> bool:
+    def is_selected(self, tags: Tags, *, partial: bool = None) -> bool:
         if not self.selectors:
             return False
+
+        if partial is None:
+            partial = self.partial_selectors
 
         static_selectors, dynamic_selectors = group_selectors(self.selectors)
 
