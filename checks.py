@@ -213,23 +213,23 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
         docs=None,
 
         checks=(
-            Check(
-                identifier='WEBSITE_WITHOUT_PROTOCOL',
+            # Check(
+            #     identifier='WEBSITE_WITHOUT_PROTOCOL',
 
-                critical=True,
-                desc='W adresie strony internetowej brakuje protokołu.',
-                extra='Poprawny adres zaczyna się najczęściej od https:// lub http://.',
+            #     critical=True,
+            #     desc='W adresie strony internetowej brakuje protokołu.',
+            #     extra='Poprawny adres zaczyna się najczęściej od https:// lub http://.',
 
-                docs='Dokumentacja adresów WWW (po polsku):\n'
-                     'https://wiki.openstreetmap.org/wiki/Pl%3AKey%3Awebsite',
+            #     docs='Dokumentacja adresów WWW (po polsku):\n'
+            #          'https://wiki.openstreetmap.org/wiki/Pl%3AKey%3Awebsite',
 
-                partial_selectors=True,
-                selectors=('url', 'website', 'contact:website'),
-                pre_fn=lambda t: \
-                ('url' in t and not WEBSITE_PROTOCOL_RE.match(t['url'])) or \
-                ('website' in t and not WEBSITE_PROTOCOL_RE.match(t['website'])) or \
-                ('contact:website' in t and not WEBSITE_PROTOCOL_RE.match(t['contact:website']))
-            ),
+            #     partial_selectors=True,
+            #     selectors=('url', 'website', 'contact:website'),
+            #     pre_fn=lambda t: \
+            #     ('url' in t and not WEBSITE_PROTOCOL_RE.match(t['url'])) or \
+            #     ('website' in t and not WEBSITE_PROTOCOL_RE.match(t['website'])) or \
+            #     ('contact:website' in t and not WEBSITE_PROTOCOL_RE.match(t['contact:website']))
+            # ),
 
             Check(
                 identifier='WEBSITE_WITH_REPEATED_PROTOCOL',
