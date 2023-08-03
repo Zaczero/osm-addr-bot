@@ -195,6 +195,7 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
                     'Q110738715',  # Allegro One Box
                     'Q110970254',  # Paczkomat InPost
                     'Q114273730',  # DPD Pickup Station
+                    'Q110457879',  # Orlen Paczka
                 },
             ),
         )
