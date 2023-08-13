@@ -304,4 +304,5 @@ poetry.toml
 .history
 .ionide
 
+result
 state.*

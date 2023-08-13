@@ -24,9 +24,9 @@ pkgs.dockerTools.buildLayeredImage {
   contents = shell.buildInputs ++ [ python-venv-lib ];
 
   extraCommands = ''
-    mkdir app
-    cp "${./.}"/LICENSE app
-    cp "${./.}"/*.py app
+    mkdir app && cd app
+    cp "${./.}"/LICENSE .
+    cp "${./.}"/*.py .
     ${shell.shellHook}
   '';
 
