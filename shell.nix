@@ -1,17 +1,31 @@
-{ pkgs ? import <nixpkgs> { } }:
+{ pkgs ? import <nixpkgs> { }
+, isDocker ? false
+}:
 
-pkgs.mkShell {
-  buildInputs = with pkgs; [
-    gnumake
+with pkgs; let
+  commonBuildInputs = [
     python311
+  ];
+
+  devBuildInputs = [
+    gnumake
     pipenv
   ];
 
-  shellHook = ''
+  commonShellHook = ''
+  '';
+
+  devShellHook = ''
     export PIPENV_VENV_IN_PROJECT=1
     export PIPENV_VERBOSITY=-1
-    [ -v DOCKER ] && [ ! -f .venv/bin/activate ] && pipenv sync
-    [ ! -v DOCKER ] && [ ! -f .venv/bin/activate ] && pipenv sync --dev
-    [ ! -v DOCKER ] && exec pipenv shell --fancy
+    [ ! -f .venv/bin/activate ] && pipenv sync --dev
+    exec pipenv shell --fancy
   '';
+
+  dockerShellHook = ''
+  '';
+in
+pkgs.mkShell {
+  buildInputs = commonBuildInputs ++ (if isDocker then [ ] else devBuildInputs);
+  shellHook = commonShellHook + (if isDocker then dockerShellHook else devShellHook);
 }
