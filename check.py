@@ -21,7 +21,8 @@ class Check(CheckBase):
     def map_title_entries(self, entries: Iterable[OverpassEntry]) -> dict[str, list[OverpassEntry]]:
         result = defaultdict(list)
 
-        if self.identifier == 'UNKNOWN_STREET_NAME' and len(entries) > 3:
+        # Group streets by name only if there are at least 3 entries
+        if self.identifier == 'UNKNOWN_STREET_NAME' and len(entries) >= 3:
             for e in entries:
                 result[f'"{e.tags["addr:street"]}":'].append(e)
 
