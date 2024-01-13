@@ -1,23 +1,22 @@
-{ pkgs ? import <nixpkgs> { } }:
+{ pkgs ? import <nixpkgs> { }, ... }:
 
-with pkgs; let
+let
   shell = import ./shell.nix {
-    inherit pkgs;
-    isDocker = true;
+    isDevelopment = false;
   };
 
-  python-venv = buildEnv {
+  python-venv = pkgs.buildEnv {
     name = "python-venv";
     paths = [
-      (runCommand "python-venv" { } ''
+      (pkgs.runCommand "python-venv" { } ''
         mkdir -p $out/lib
-        cp -r "${./.venv/lib/python3.11/site-packages}"/* $out/lib
+        cp -r "${./.venv/lib/python3.12/site-packages}"/* $out/lib
       '')
     ];
   };
 in
-dockerTools.buildLayeredImage {
-  name = "docker.monicz.pl/osm-addr-bot";
+with pkgs; dockerTools.buildLayeredImage {
+  name = "docker.monicz.dev/osm-addr-bot";
   tag = "latest";
   maxLayers = 10;
 
@@ -25,14 +24,15 @@ dockerTools.buildLayeredImage {
 
   extraCommands = ''
     mkdir app && cd app
-    cp "${./.}"/LICENSE .
     cp "${./.}"/*.py .
+    export PATH="${lib.makeBinPath shell.buildInputs}:$PATH"
     ${shell.shellHook}
   '';
 
   config = {
     WorkingDir = "/app";
     Env = [
+      "LD_LIBRARY_PATH=${lib.makeLibraryPath shell.buildInputs}"
       "PYTHONPATH=${python-venv}/lib"
       "PYTHONUNBUFFERED=1"
       "PYTHONDONTWRITEBYTECODE=1"

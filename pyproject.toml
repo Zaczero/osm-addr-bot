@@ -1,0 +1,18 @@
+[tool.poetry]
+authors = ["Your Name <you@example.com>"]
+description = ""
+name = "osm-addr-bot"
+version = "0.0.0"
+
+[tool.poetry.dependencies]
+cachetools = "^5.3.2"
+geopy = "^2.4.1"
+python = "^3.12"
+requests = "^2.31.0"
+tenacity = "^8.2.3"
+tqdm = "^4.66.1"
+xmltodict = "^0.13.0"
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
