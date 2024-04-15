@@ -268,6 +268,39 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
             ),
         ),
     ),
+
+    Category(
+        identifier='TAGS_COMBINATION',
+        min_changesets=0,
+
+        header_critical='Zauważyłem, że Twoja zmiana zawiera niepoprawne połączenie tagów. '
+                        'Przygotowałem listę obiektów do poprawy oraz dodatkowe informacje:',
+
+        header='Zauważyłem, że Twoja zmiana zawiera niepoprawne połączenie tagów. '
+                        'Przygotowałem listę obiektów do poprawy oraz dodatkowe informacje:',
+
+        docs=None,
+
+        checks=(
+            Check(
+                identifier='CONSTRUCTION_NOT_REMOVED',
+
+                critical=True,
+                desc='Klucz construction=* nie został usunięty.',
+                extra='Jeżeli budowa została zakończona należy usunąć dotychczasowe tagowanie wskazujące na budowę.',
+
+                docs=None,
+
+                partial_selectors=True,
+                selectors=('construction'),
+                pre_fn=lambda t: \
+                (t.get('building') == t.get('construction')) or \
+                (t.get('landuse') == t.get('construction')) or \
+                (t.get('highway') == t.get('construction')) or \
+                (t.get('railway') == t.get('construction'))
+            )
+        )
+    )
 )
 
 CHANGESET_CATEGORIES: tuple[Category, ...] = tuple()
