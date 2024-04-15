@@ -1,4 +1,4 @@
-{ pkgs ? import <nixpkgs> { }, ... }:
+{ pkgs ? import <nixpkgs> { } }:
 
 let
   shell = import ./shell.nix {
@@ -25,17 +25,15 @@ with pkgs; dockerTools.buildLayeredImage {
   extraCommands = ''
     mkdir app && cd app
     cp "${./.}"/*.py .
-    export PATH="${lib.makeBinPath shell.buildInputs}:$PATH"
-    ${shell.shellHook}
   '';
 
   config = {
     WorkingDir = "/app";
     Env = [
-      "LD_LIBRARY_PATH=${lib.makeLibraryPath shell.buildInputs}"
       "PYTHONPATH=${python-venv}/lib"
       "PYTHONUNBUFFERED=1"
       "PYTHONDONTWRITEBYTECODE=1"
+      "TZ=UTC"
     ];
     Entrypoint = [ "python" "main.py" ];
     Cmd = [ ];

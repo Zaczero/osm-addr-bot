@@ -1,9 +1,9 @@
 { isDevelopment ? true }:
 
 let
-  # Currently using nixpkgs-23.11-darwin
+  # Currently using nixpkgs-unstable
   # Update with `nixpkgs-update` command
-  pkgs = import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/88d128f5f35be5d405fe874495604f3f29350a5f.tar.gz") { };
+  pkgs = import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/2748d22b45a99fb2deafa5f11c7531c212b2cefa.tar.gz") { };
 
   libraries' = with pkgs; [
     # Base libraries
@@ -11,18 +11,25 @@ let
     zlib.out
   ];
 
+  # Wrap Python to override LD_LIBRARY_PATH
+  wrappedPython = with pkgs; symlinkJoin {
+    name = "python";
+    paths = [ python312 ];
+    buildInputs = [ makeWrapper ];
+    postBuild = ''
+      wrapProgram "$out/bin/python3.12" --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath libraries'}"
+    '';
+  };
+
   packages' = with pkgs; [
-    # Base packages
-    python312
-  ] ++ lib.optionals isDevelopment [
-    # Development packages
+    wrappedPython
     poetry
 
     # Scripts
     # -- Misc
     (writeShellScriptBin "nixpkgs-update" ''
       set -e
-      hash=$(git ls-remote https://github.com/NixOS/nixpkgs nixpkgs-23.11-darwin | cut -f 1)
+      hash=$(git ls-remote https://github.com/NixOS/nixpkgs nixpkgs-unstable | cut -f 1)
       sed -i -E "s|/nixpkgs/archive/[0-9a-f]{40}\.tar\.gz|/nixpkgs/archive/$hash.tar.gz|" shell.nix
       echo "Nixpkgs updated to $hash"
     '')
@@ -34,29 +41,32 @@ let
   ];
 
   shell' = with pkgs; lib.optionalString isDevelopment ''
-    [ ! -e .venv/bin/python ] && [ -h .venv/bin/python ] && rm -r .venv
+    current_python=$(readlink -e .venv/bin/python || echo "")
+    current_python=''${current_python%/bin/*}
+    [ "$current_python" != "${wrappedPython}" ] && rm -r .venv
 
     echo "Installing Python dependencies"
     export POETRY_VIRTUALENVS_IN_PROJECT=1
+    poetry env use "${wrappedPython}/bin/python"
     poetry install --no-root --compile
 
     echo "Activating Python virtual environment"
     source .venv/bin/activate
 
-    export LD_LIBRARY_PATH="${lib.makeLibraryPath libraries'}"
-
     # Development environment variables
+    export PYTHONNOUSERSITE=1
+    export TZ="UTC"
+
     if [ -f .env ]; then
       echo "Loading .env file"
       set -o allexport
       source .env set
-      +o allexport
+      set +o allexport
     fi
   '';
 in
 pkgs.mkShell
 {
-  libraries = libraries';
-  buildInputs = libraries' ++ packages';
+  buildInputs = packages';
   shellHook = shell';
 }

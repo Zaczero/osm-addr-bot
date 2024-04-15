@@ -10,8 +10,7 @@ geopy = "^2.4.1"
 python = "^3.12"
 requests = "^2.31.0"
 tenacity = "^8.2.3"
-tqdm = "^4.66.1"
-xmltodict = "^0.13.0"
+xmltodict = "<1"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
