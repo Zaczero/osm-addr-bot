@@ -1,12 +1,9 @@
-{ isDevelopment ? true }:
-
 let
   # Currently using nixpkgs-unstable
   # Update with `nixpkgs-update` command
   pkgs = import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/2748d22b45a99fb2deafa5f11c7531c212b2cefa.tar.gz") { };
 
   libraries' = with pkgs; [
-    # Base libraries
     stdenv.cc.cc.lib
     zlib.out
   ];
@@ -40,7 +37,7 @@ let
     '')
   ];
 
-  shell' = with pkgs; lib.optionalString isDevelopment ''
+  shell' = with pkgs; ''
     current_python=$(readlink -e .venv/bin/python || echo "")
     current_python=''${current_python%/bin/*}
     [ "$current_python" != "${wrappedPython}" ] && rm -r .venv

@@ -1,9 +1,7 @@
 { pkgs ? import <nixpkgs> { } }:
 
 let
-  shell = import ./shell.nix {
-    isDevelopment = false;
-  };
+  shell = import ./shell.nix;
 
   python-venv = pkgs.buildEnv {
     name = "python-venv";
