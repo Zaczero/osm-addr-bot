@@ -300,6 +300,25 @@ OVERPASS_CATEGORIES: list[Category] = [
                     t.get('railway')
                 )
             ),
+
+            Check(
+                identifier='PROPOSED_NOT_REMOVED',
+
+                critical=False,
+                desc='Klucz proposed=* nie został usunięty.',
+                extra='Jeżeli proponowana budowa została rozpoczęta lub plany zmieniły się w inny sposób, należy usunąć dotychczasowe tagowanie wskazujące na propozycję budowy.',
+
+                docs=None,
+
+                selectors=('proposed'),
+                pre_fn=lambda t: \
+                t['proposed'] in (
+                    t.get('building'),
+                    t.get('landuse'),
+                    t.get('highway'),
+                    t.get('railway')
+                )
+            ),
         ]
     ),
 ]
