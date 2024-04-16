@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Iterable
 
@@ -14,7 +15,7 @@ class Category(CheckBase):
     header: str
     docs: str | None
 
-    checks: tuple[Check, ...]
+    checks: Sequence[Check]
 
     def map_checks(self, entries: Iterable[OverpassEntry]) -> dict[Check, list[OverpassEntry]]:
         # filter with category selectors if set

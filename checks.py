@@ -13,7 +13,7 @@ WEBSITE_DUPLICATED_PROTOCOL_RE = re.compile(r'^\w{2,}://\w{2,}://')
 WEBSITE_SHORTENER_RE = re.compile(r'^\w{2,}://(www\.)?(tinyurl\.com|tiny\.(cc|pl)|(bit|cutt)\.ly|[gt]\.co|goo\.gl(?!/maps))/',
                                   re.IGNORECASE)
 
-OVERPASS_CATEGORIES: tuple[Category, ...] = (
+OVERPASS_CATEGORIES: list[Category] = [
     Category(
         identifier='ADDRESS',
         min_changesets=0,
@@ -29,7 +29,7 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
 
         selectors=('addr:*',),
 
-        checks=(
+        checks=[
             Check(
                 identifier='BAD_CITY_WITH_PLACE',
                 priority=50,
@@ -163,7 +163,7 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
                 selectors=('addr:street',),
                 post_fn=lambda o, i: o.query_street_names(i)
             ),
-        )
+        ]
     ),
 
     Category(
@@ -178,7 +178,7 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
 
         docs=None,
 
-        checks=(
+        checks=[
             Check(
                 identifier='PARCEL_LOCKER_WITH_NAME',
 
@@ -198,7 +198,7 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
                     'Q110457879',  # Orlen Paczka
                 },
             ),
-        )
+        ]
     ),
 
     Category(
@@ -213,7 +213,7 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
 
         docs=None,
 
-        checks=(
+        checks=[
             # Check(
             #     identifier='WEBSITE_WITHOUT_PROTOCOL',
 
@@ -266,7 +266,7 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
                 ('website' in t and WEBSITE_SHORTENER_RE.match(t['website'])) or \
                 ('contact:website' in t and WEBSITE_SHORTENER_RE.match(t['contact:website']))
             ),
-        ),
+        ]
     ),
 
     Category(
@@ -281,7 +281,7 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
 
         docs=None,
 
-        checks=(
+        checks=[
             Check(
                 identifier='CONSTRUCTION_NOT_REMOVED',
 
@@ -299,10 +299,10 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
                     t.get('highway'),
                     t.get('railway')
                 )
-            )
-        )
-    )
-)
+            ),
+        ]
+    ),
+]
 
 CHANGESET_CATEGORIES: tuple[Category, ...] = tuple()
 
