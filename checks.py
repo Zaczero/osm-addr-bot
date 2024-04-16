@@ -171,7 +171,7 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
 
                 critical=True,
                 desc="Nazwa ulicy nie powinna zawierać przedrostka.",
-                extra="Nazwa ulicy nie powinna zaczynać się od 'ul.', 'ulica ' itp."
+                extra="Nazwa ulicy nie powinna zaczynać się od 'ul.', 'ulica' itp. "
                       "Należy usunąć przedrostek i pozostawić samą nazwę ulicy.",
 
                 docs="Zasady nazewnictwa ulic w polsce:\n"
