@@ -304,7 +304,7 @@ OVERPASS_CATEGORIES: list[Category] = [
     ),
 ]
 
-CHANGESET_CATEGORIES: tuple[Category, ...] = tuple()
+CHANGESET_CATEGORIES: list[Category] = []
 
 ALL_CATEGORIES = OVERPASS_CATEGORIES + CHANGESET_CATEGORIES
 ALL_CHECKS = tuple(chain.from_iterable(c.checks for c in ALL_CATEGORIES))
