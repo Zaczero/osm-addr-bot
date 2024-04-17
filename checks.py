@@ -175,9 +175,9 @@ OVERPASS_CATEGORIES: list[Category] = [
                       "Należy usunąć przedrostek i pozostawić samą nazwę ulicy.",
 
                 docs="Zasady nazewnictwa ulic w polsce:\n"
-                "https://wiki.osm.org/Pl:Znakowanie_dróg_w_Polsce#Nazewnictwo_ulic",
+                     "https://wiki.osm.org/Pl:Znakowanie_dróg_w_Polsce#Nazewnictwo_ulic",
 
-                selectors=("addr:street"),
+                selectors=("addr:street",),
                 pre_fn=lambda t: STREET_NAME_BAD_PREFIX.match(t["addr:street"])
             ),
         ]
