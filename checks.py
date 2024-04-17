@@ -12,6 +12,7 @@ WEBSITE_PROTOCOL_RE = re.compile(r'^\w{2,}://')
 WEBSITE_DUPLICATED_PROTOCOL_RE = re.compile(r'^\w{2,}://\w{2,}://')
 WEBSITE_SHORTENER_RE = re.compile(r'^\w{2,}://(www\.)?(tinyurl\.com|tiny\.(cc|pl)|(bit|cutt)\.ly|[gt]\.co|goo\.gl(?!/maps))/',
                                   re.IGNORECASE)
+STREET_NAME_BAD_PREFIX = re.compile(r'^ul(ica)?\.? ')
 
 OVERPASS_CATEGORIES: list[Category] = [
     Category(
@@ -162,6 +163,22 @@ OVERPASS_CATEGORIES: list[Category] = [
 
                 selectors=('addr:street',),
                 post_fn=lambda o, i: o.query_street_names(i)
+            ),
+
+            Check(
+                identifier="STREET_NAME_WITH_PREFIX",
+                priority=15,
+
+                critical=True,
+                desc="Nazwa ulicy nie powinna zawierać przedrostka.",
+                extra="Nazwa ulicy nie powinna zaczynać się od 'ul.', 'ulica' itp. "
+                      "Należy usunąć przedrostek i pozostawić samą nazwę ulicy.",
+
+                docs="Zasady nazewnictwa ulic w polsce:\n"
+                "https://wiki.osm.org/Pl:Znakowanie_dróg_w_Polsce#Nazewnictwo_ulic",
+
+                selectors=("addr:street"),
+                pre_fn=lambda t: STREET_NAME_BAD_PREFIX.match(t["addr:street"])
             ),
         ]
     ),
