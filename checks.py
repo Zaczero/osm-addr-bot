@@ -14,7 +14,7 @@ WEBSITE_SHORTENER_RE = re.compile(r'^\w{2,}://(www\.)?(tinyurl\.com|tiny\.(cc|pl
                                   re.IGNORECASE)
 STREET_NAME_BAD_PREFIX = re.compile(r'^ul(ica)?\.? ')
 
-OVERPASS_CATEGORIES: tuple[Category, ...] = (
+OVERPASS_CATEGORIES: list[Category] = [
     Category(
         identifier='ADDRESS',
         min_changesets=0,
@@ -30,7 +30,7 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
 
         selectors=('addr:*',),
 
-        checks=(
+        checks=[
             Check(
                 identifier='BAD_CITY_WITH_PLACE',
                 priority=50,
@@ -179,8 +179,8 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
 
                 selectors=("addr:street"),
                 pre_fn=lambda t: STREET_NAME_BAD_PREFIX.match(t["addr:street"])
-            )
-        )
+            ),
+        ]
     ),
 
     Category(
@@ -195,7 +195,7 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
 
         docs=None,
 
-        checks=(
+        checks=[
             Check(
                 identifier='PARCEL_LOCKER_WITH_NAME',
 
@@ -215,7 +215,7 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
                     'Q110457879',  # Orlen Paczka
                 },
             ),
-        )
+        ]
     ),
 
     Category(
@@ -230,7 +230,7 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
 
         docs=None,
 
-        checks=(
+        checks=[
             # Check(
             #     identifier='WEBSITE_WITHOUT_PROTOCOL',
 
@@ -283,11 +283,64 @@ OVERPASS_CATEGORIES: tuple[Category, ...] = (
                 ('website' in t and WEBSITE_SHORTENER_RE.match(t['website'])) or \
                 ('contact:website' in t and WEBSITE_SHORTENER_RE.match(t['contact:website']))
             ),
-        ),
+        ]
     ),
-)
 
-CHANGESET_CATEGORIES: tuple[Category, ...] = tuple()
+    Category(
+        identifier='TAGS_COMBINATION',
+        min_changesets=10,
+
+        header_critical='Zauważyłem, że Twoja zmiana zawiera niepoprawne połączenie tagów. '
+                        'Przygotowałem listę obiektów do poprawy oraz dodatkowe informacje:',
+
+        header='Zauważyłem, że Twoja zmiana zawiera niepoprawne połączenie tagów. '
+               'Przygotowałem listę obiektów oraz dodatkowe informacje:',
+
+        docs=None,
+
+        checks=[
+            Check(
+                identifier='CONSTRUCTION_NOT_REMOVED',
+
+                critical=False,
+                desc='Klucz construction=* nie został usunięty.',
+                extra='Jeżeli budowa została zakończona należy usunąć dotychczasowe tagowanie wskazujące na budowę.',
+
+                docs=None,
+
+                selectors=('construction'),
+                pre_fn=lambda t: \
+                t['construction'] in (
+                    t.get('building'),
+                    t.get('landuse'),
+                    t.get('highway'),
+                    t.get('railway')
+                )
+            ),
+
+            Check(
+                identifier='PROPOSED_NOT_REMOVED',
+
+                critical=False,
+                desc='Klucz proposed=* nie został usunięty.',
+                extra='Jeżeli proponowana budowa została rozpoczęta lub plany zmieniły się w inny sposób, należy usunąć dotychczasowe tagowanie wskazujące na propozycję budowy.',
+
+                docs=None,
+
+                selectors=('proposed'),
+                pre_fn=lambda t: \
+                t['proposed'] in (
+                    t.get('building'),
+                    t.get('landuse'),
+                    t.get('highway'),
+                    t.get('railway')
+                )
+            ),
+        ]
+    ),
+]
+
+CHANGESET_CATEGORIES: list[Category] = []
 
 ALL_CATEGORIES = OVERPASS_CATEGORIES + CHANGESET_CATEGORIES
 ALL_CHECKS = tuple(chain.from_iterable(c.checks for c in ALL_CATEGORIES))

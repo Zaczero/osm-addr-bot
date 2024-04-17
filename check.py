@@ -1,10 +1,14 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Callable, Iterable
+from typing import TYPE_CHECKING, Callable, Iterable
+
+from check_base import CheckBase
 
 from aliases import Tags
-from check_base import CheckBase
 from overpass_entry import OverpassEntry
+
+if TYPE_CHECKING:
+    from overpass import Overpass
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -16,7 +20,7 @@ class Check(CheckBase):
     docs: str | None
 
     pre_fn: Callable[[Tags], bool] | None = None
-    post_fn: Callable[[Any, list], list] | None = None
+    post_fn: Callable[['Overpass', list[OverpassEntry]], list[OverpassEntry]] | None = None
 
     def map_title_entries(self, entries: Iterable[OverpassEntry]) -> dict[str, list[OverpassEntry]]:
         result = defaultdict(list)
