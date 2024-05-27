@@ -1,10 +1,9 @@
 import os
 from pathlib import Path
 
-OSM_USERNAME = os.getenv('OSM_USERNAME')
-OSM_PASSWORD = os.getenv('OSM_PASSWORD')
-DRY_RUN = os.getenv('DRY_RUN', None) == '1'
-IGNORE_ALREADY_DISCUSSED = os.getenv('IGNORE_ALREADY_DISCUSSED', None) == '1'
+OSM_TOKEN = os.getenv('OSM_TOKEN')
+DRY_RUN = os.getenv('DRY_RUN') == '1'
+IGNORE_ALREADY_DISCUSSED = os.getenv('IGNORE_ALREADY_DISCUSSED') == '1'
 
 # Dedicated instance unavailable? Pick one from the public list:
 # https://wiki.openstreetmap.org/wiki/Overpass_API#Public_Overpass_API_instances
@@ -23,7 +22,9 @@ APP_BLACKLIST = (
     'aed.openstreetmap.org.pl',
     'openaedmap.org',
 
-    # backup, general blacklist
+    'osm-revert',
+
+    # fallback, general blacklist
     'Android',
     'iOS',
 )

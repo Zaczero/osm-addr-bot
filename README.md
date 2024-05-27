@@ -5,13 +5,15 @@
 [![Support my work](https://shields.monicz.dev/badge/%E2%99%A5%EF%B8%8F%20Support%20my%20work-purple)](https://monicz.dev/#support-my-work)
 [![GitHub Repo stars](https://shields.monicz.dev/github/stars/Zaczero/osm-addr-bot?style=social)](https://github.com/Zaczero/osm-addr-bot)
 
-🗺️ Easily configurable OpenStreetMap address validation bot
+🗺️ Configurable OpenStreetMap changeset validation bot
 
-### Execution output
+## Example output
 
-<img width="50%" src="https://github.com/Zaczero/osm-addr-bot/blob/main/resources/preview.png?raw=true" alt="Commandline preview">
+### Command-line
 
-### Generated discussion
+<img width="50%" src="https://github.com/Zaczero/osm-addr-bot/blob/main/resources/preview.png?raw=true" alt="Command-line preview">
+
+### Discussion
 
 <img width="30%" src="https://github.com/Zaczero/osm-addr-bot/blob/main/resources/discussion.png?raw=true" alt="Discussion preview">
 
@@ -19,14 +21,4 @@
 
 ### Contact me
 
-https://monicz.dev/#get-in-touch
-
-### Support my work
-
-https://monicz.dev/#support-my-work
-
-### License
-
-This project is licensed under the GNU Affero General Public License v3.0.
-
-The complete license text can be accessed in the repository at [LICENSE](https://github.com/Zaczero/osm-addr-bot/blob/main/LICENSE).
+<https://monicz.dev/#get-in-touch>

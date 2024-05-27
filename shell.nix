@@ -1,7 +1,7 @@
 let
   # Currently using nixpkgs-unstable
   # Update with `nixpkgs-update` command
-  pkgs = import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/2748d22b45a99fb2deafa5f11c7531c212b2cefa.tar.gz") { };
+  pkgs = import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/e2dd4e18cc1c7314e24154331bae07df76eb582f.tar.gz") { };
 
   libraries' = with pkgs; [
     stdenv.cc.cc.lib
@@ -37,7 +37,7 @@ let
     '')
   ];
 
-  shell' = with pkgs; ''
+  shell' = ''
     current_python=$(readlink -e .venv/bin/python || echo "")
     current_python=''${current_python%/bin/*}
     [ "$current_python" != "${wrappedPython}" ] && rm -r .venv
@@ -52,7 +52,7 @@ let
 
     # Development environment variables
     export PYTHONNOUSERSITE=1
-    export TZ="UTC"
+    export TZ=UTC
 
     if [ -f .env ]; then
       echo "Loading .env file"

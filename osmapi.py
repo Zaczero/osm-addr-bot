@@ -2,14 +2,14 @@ from functools import cache
 
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from config import OSM_PASSWORD, OSM_USERNAME
+from config import OSM_TOKEN
 from utils import get_http_client
 
 
 class OsmApi:
     def __init__(self):
         self.base_url = 'https://api.openstreetmap.org/api/0.6'
-        self.c = get_http_client(auth=(OSM_USERNAME, OSM_PASSWORD))
+        self.c = get_http_client(headers={'Authorization': f'Bearer {OSM_TOKEN}'})
 
     @cache
     def get_authorized_user(self) -> dict:

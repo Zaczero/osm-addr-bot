@@ -1,5 +1,5 @@
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from itertools import chain
 
 from cachetools import cached
@@ -179,7 +179,10 @@ def main():
         overpass = Overpass(s)
         s.configure_end_ts(overpass.get_timestamp_osm_base() - 1)
 
-        print(f'Time range: {datetime.utcfromtimestamp(s.start_ts)} - {datetime.utcfromtimestamp(s.end_ts)}')
+        start_date = datetime.fromtimestamp(s.start_ts, UTC)
+        end_date = datetime.fromtimestamp(s.end_ts, UTC)
+
+        print(f'Time range: {start_date} - {end_date}')
         print(f'[1/?] Querying issues…')
         changed = overpass.query()
 
