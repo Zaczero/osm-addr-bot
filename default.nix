@@ -16,7 +16,6 @@ in
 with pkgs; dockerTools.buildLayeredImage {
   name = "docker.monicz.dev/osm-addr-bot";
   tag = "latest";
-  maxLayers = 10;
 
   contents = shell.buildInputs ++ [ python-venv ];
 
