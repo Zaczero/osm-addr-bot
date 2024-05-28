@@ -8,8 +8,8 @@ from cachetools.keys import hashkey
 from category import Category
 from check import Check
 from checks import OVERPASS_CATEGORIES
-from config import (APP_BLACKLIST, DRY_RUN, IGNORE_ALREADY_DISCUSSED,
-                    NEW_USER_THRESHOLD, NOT_NICE_USERS, PRO_USER_THRESHOLD)
+from config import (APP_BLACKLIST, DRY_RUN, IGNORE_ALREADY_DISCUSSED, MAX_ISSUES_PER_CHANGESET,
+                    NEW_USER_THRESHOLD, PRO_USER_THRESHOLD)
 from osmapi import OsmApi
 from overpass import Overpass
 from overpass_entry import OverpassEntry
@@ -153,9 +153,7 @@ def compose_message(cat: Category, user: dict, issues: dict[Check, list[Overpass
         message += '\n\n'.join(docs)
         message += '\n\n'
 
-    if user['id'] in NOT_NICE_USERS:
-        message = message.strip()
-    elif pro_user:
+    if pro_user:
         message += 'Pozdrawiam! 🦀'
     else:
         message += 'W razie problemów lub pytań, proszę pisać. Chętnie pomogę.\n' \
@@ -236,6 +234,12 @@ def main():
                 # check changesets count
                 if user['changesets']['count'] < cat.min_changesets:
                     print(f'🌱 Skipped {changeset_id}: New user')
+                    continue
+
+                # check number of issues
+                num_issues = sum(len(i) for i in changeset_issues.values())
+                if num_issues > MAX_ISSUES_PER_CHANGESET:
+                    print(f'📝 Skipped {changeset_id}: Too many issues')
                     continue
 
                 message = compose_message(cat, user, changeset_issues)
