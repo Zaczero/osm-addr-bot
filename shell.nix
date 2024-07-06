@@ -1,7 +1,7 @@
 let
   # Currently using nixpkgs-unstable
   # Update with `nixpkgs-update` command
-  pkgs = import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/e2dd4e18cc1c7314e24154331bae07df76eb582f.tar.gz") { };
+  pkgs = import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/4284c2b73c8bce4b46a6adf23e16d9e2ec8da4bb.tar.gz") { };
 
   libraries' = with pkgs; [
     stdenv.cc.cc.lib
@@ -62,7 +62,7 @@ let
     fi
   '';
 in
-pkgs.mkShell
+pkgs.mkShellNoCC
 {
   buildInputs = packages';
   shellHook = shell';
