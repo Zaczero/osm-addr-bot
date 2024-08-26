@@ -23,8 +23,14 @@ class OsmApi:
     def get_changeset(self, changeset_id: int) -> dict:
         r = self.c.get(f'{self.base_url}/changeset/{changeset_id}.json?include_discussion=true')
         r.raise_for_status()
+        data = r.json()
 
-        return r.json()['elements'][0]
+        # https://github.com/openstreetmap/openstreetmap-website/issues/5119
+        # i love osm maintainers
+        try:
+            return data['changeset']
+        except KeyError:
+            return data['elements'][0]
 
     @cache
     @retry(stop=stop_after_attempt(5), wait=wait_exponential())
