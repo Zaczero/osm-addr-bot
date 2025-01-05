@@ -35,7 +35,7 @@ SEARCH_BBOX = {
     'max_lon': 24.0299858
 }
 
-STATE_PATH = Path('state.json')
+STATE_PATH = Path('state.txt')
 
 # auto upgrade file type for new users
 if not STATE_PATH.is_file():
