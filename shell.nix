@@ -1,17 +1,17 @@
 let
   # Update packages with `nixpkgs-update` command
-  pkgs = import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/658e7223191d2598641d50ee4e898126768fe847.tar.gz") { };
+  pkgs = import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/a27871180d30ebee8aa6b11bf7fef8a52f024733.tar.gz") { };
 
   pythonLibs = with pkgs; [
-    stdenv.cc.cc.lib
     zlib.out
+    stdenv.cc.cc.lib
   ];
   python' = with pkgs; (symlinkJoin {
     name = "python";
-    paths = [ python312 ];
+    paths = [ python313 ];
     buildInputs = [ makeWrapper ];
     postBuild = ''
-      wrapProgram "$out/bin/python3.12" --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath pythonLibs}"
+      wrapProgram "$out/bin/python3.13" --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath pythonLibs}"
     '';
   });
 
@@ -32,20 +32,22 @@ let
   ];
 
   shell' = ''
+    export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
+    export PYTHONNOUSERSITE=1
+    export PYTHONPATH=""
+    export TZ=UTC
+
     current_python=$(readlink -e .venv/bin/python || echo "")
     current_python=''${current_python%/bin/*}
     [ "$current_python" != "${python'}" ] && rm -rf .venv/
 
     echo "Installing Python dependencies"
-    echo "${python'}/bin/python" > .python-version
+    export UV_COMPILE_BYTECODE=1
+    export UV_PYTHON="${python'}/bin/python"
     uv sync --frozen
 
     echo "Activating Python virtual environment"
     source .venv/bin/activate
-
-    # Development environment variables
-    export PYTHONNOUSERSITE=1
-    export TZ=UTC
 
     if [ -f .env ]; then
       echo "Loading .env file"

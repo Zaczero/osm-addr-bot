@@ -1,6 +1,6 @@
 # osm-addr-bot
 
-![Python version](https://shields.monicz.dev/badge/python-v3.12-blue)
+![Python version](https://shields.monicz.dev/badge/python-v3.13-blue)
 [![Liberapay Patrons](https://shields.monicz.dev/liberapay/patrons/Zaczero?logo=liberapay&label=Patrons)](https://liberapay.com/Zaczero/)
 [![GitHub Sponsors](https://shields.monicz.dev/github/sponsors/Zaczero?logo=github&label=Sponsors&color=%23db61a2)](https://github.com/sponsors/Zaczero)
 

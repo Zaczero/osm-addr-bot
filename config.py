@@ -5,11 +5,9 @@ OSM_TOKEN = os.getenv('OSM_TOKEN')
 DRY_RUN = os.getenv('DRY_RUN') == '1'
 IGNORE_ALREADY_DISCUSSED = os.getenv('IGNORE_ALREADY_DISCUSSED') == '1'
 
-# Dedicated instance unavailable? Pick one from the public list:
-# https://wiki.openstreetmap.org/wiki/Overpass_API#Public_Overpass_API_instances
-OVERPASS_API_INTERPRETER = os.getenv('OVERPASS_API_INTERPRETER', 'https://overpass.monicz.dev/api/interpreter')
-
 USER_AGENT = f'osm-addr-bot (+https://github.com/Zaczero/osm-addr-bot)'
+
+OVERPASS_API_INTERPRETER = os.getenv('OVERPASS_API_INTERPRETER', 'https://overpass-api.de/api/interpreter')
 
 APP_BLACKLIST = (
     'StreetComplete',
@@ -37,10 +35,10 @@ SEARCH_BBOX = {
     'max_lon': 24.0299858
 }
 
-STATE_PATH = Path('state.txt')
+STATE_PATH = Path('state.json')
 
 # auto upgrade file type for new users
-if not STATE_PATH.exists():
+if not STATE_PATH.is_file():
     STATE_PATH = Path('state.json')
 
 STATE_MAX_BACKLOG = 3600 * 24 * 3  # 3 days
