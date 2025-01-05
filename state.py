@@ -18,7 +18,7 @@ class State:
     _fd: IO
 
     def __enter__(self):
-        if not STATE_PATH.exists():
+        if not STATE_PATH.is_file():
             with open(STATE_PATH, 'x') as f:
                 f.write('0')
 

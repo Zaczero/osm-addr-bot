@@ -35,12 +35,7 @@ SEARCH_BBOX = {
     'max_lon': 24.0299858
 }
 
-STATE_PATH = Path('state.txt')
-
-# auto upgrade file type for new users
-if not STATE_PATH.is_file():
-    STATE_PATH = Path('state.json')
-
+STATE_PATH = Path('state.json')
 STATE_MAX_BACKLOG = 3600 * 24 * 3  # 3 days
 STATE_MAX_DIFF = 3600 * 8  # 8 hours
 
